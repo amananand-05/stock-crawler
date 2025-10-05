@@ -226,3 +226,28 @@ ISC License
 This application is for educational and research purposes only. Stock market data is provided by MoneyControl API. Please ensure compliance with their terms of service and consider implementing proper rate limiting and caching for production use.
 
 **Important**: Always do your own research before making any investment decisions. This tool does not provide financial advice.
+
+
+### sample curls:
+1. get `/api/stock`
+```text
+curl --location 'http://localhost:3000/api/stock?symbol=TI01'
+```
+2. get `/api/large-caps`
+```text
+curl --location 'http://localhost:3000/api/large-caps?capSize=100000' \
+--header 'Content-Type: application/json'
+```
+3. get `/api/get-stock-history`
+```text
+curl --location 'http://localhost:3000/api/get-stock-history?symbol=VBL&resolution_count=3&resolution_unit=H&ema=5'
+```
+4. get `/api/get-under-ema`
+```text
+curl --location 'http://localhost:3000/api/get-under-ema?resolution_count=1&resolution_unit=D&ema=5&cap=100000'
+```
+5. get `/api/sync-symbols` (disabled in code)
+```text
+curl --location 'http://localhost:3000/api/sync-symbols' \
+--header 'Content-Type: application/json'
+```
