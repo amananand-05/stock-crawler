@@ -92,7 +92,7 @@ app.use((error, req, res, next) => {
 loadModules()
   .then(() => {
     app.listen(port, () => {
-      console.log(`Hii... there! 👋`);
+      console.log(`👋 Hii... there!`);
       console.log(`🚀 Stock Crawler API server running on port ${port}`);
       console.log(`📊 Available endpoints:`);
       console.log(`   GET    /api/stock?symbol=:id      - Get stock info`);
