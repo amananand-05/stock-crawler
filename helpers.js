@@ -17,7 +17,10 @@ async function loadModules() {
 }
 
 // Fetch symbol info from NSE or BSE
-async function getSymbolCurrInfo(symbol = "") {
+async function getSymbolCurrInfo(symbol = undefined) {
+  if (!symbol || symbol === "")
+    throw new Error("Invalid symbol, please provide: symbol, it is 'sc_id'");
+
   const exchanges = ["nse", "bse"];
   for (const exchange of exchanges) {
     try {
@@ -73,7 +76,7 @@ function generateCombos() {
 
 // Main function: fetch and persist symbols
 async function accAndPersistSymbols() {
-  const combos = generateCombos(); // 17,576 combos
+  const combos = generateCombos();
   const limit = pLimit(1000); // concurrency limit
 
   console.log(`🚀 Starting fetch for ${combos.length} combinations...`);
@@ -130,8 +133,12 @@ async function loadSymbols() {
 }
 
 // Load the symbols from symbolsDb.json
-async function getLargeCaps(cap = 100000) {
+async function getLargeCaps(cap = undefined) {
   try {
+    if (!cap)
+      throw new Error(
+        'Invalid cap, please provide company size in (Crs): "cap"',
+      );
     const data = await fs.readFile(symbolMetadataPath, "utf-8");
     let metadata = JSON.parse(data);
     return (
@@ -234,33 +241,39 @@ async function syncSymbolsMetadata() {
 
 // get history data for a symbol
 async function getStockHistory(
-  symbol,
-  resolution_count = 3,
-  resolution_unit = "H",
-  ema = 5,
+  symbol = undefined,
+  candle_width = undefined,
+  candle_unit = undefined,
+  ema = undefined,
   from = 0,
   to = Math.floor(Date.now() / 1000),
   currencyCode = "INR",
 ) {
   try {
-    resolution_count = parseInt(resolution_count);
+    if (!symbol || symbol === "" || !candle_width || !candle_unit || !ema)
+      throw new Error(
+        "Please provide:" +
+          " (symbol: should be NSEID)" +
+          " (candle_width: should be integer)" +
+          " (candle_unit: should be 'H' for hours or 'D' for days)" +
+          " (ema: should be an integer)",
+      );
+
+    candle_width = parseInt(candle_width);
     ema = parseInt(ema);
     const result = await axios.get(
       `https://priceapi.moneycontrol.com/techCharts/indianMarket/stock/history?` +
         `symbol=${symbol}` +
-        `&resolution=${resolution_unit === "H" ? 60 : "1D"}` +
+        `&resolution=${candle_unit === "H" ? 60 : "1D"}` +
         `&from=${from}` +
         `&to=${to}` +
-        `&countback=${resolution_count * 40 - 1}` +
+        `&countback=${candle_width * 40 - 1}` +
         `&currencyCode=${currencyCode}`,
       { httpsAgent: agent },
     );
 
     if (result?.data) {
-      const normalizedData = normalizeResolutionCount(
-        result?.data,
-        resolution_count,
-      );
+      const normalizedData = normalizeCandleWidth(result?.data, candle_width);
       // calculate EMA
       if (normalizedData.c.length >= ema) {
         let emaValues = new Array(ema).fill(0);
@@ -274,22 +287,26 @@ async function getStockHistory(
         for (let i = 5; i < normalizedData.c.length; i++) {
           emaValues[i] = getEMA(normalizedData.c[i], emaValues[i - 1], ema);
         }
-        normalizedData.ema5 = emaValues;
+        normalizedData.ema = emaValues;
       }
       return normalizedData;
     }
     return null;
   } catch (error) {
+    if (error?.message && error.message.includes("Please provide"))
+      throw error;
     return null;
   }
 }
 
-function getEMA(Price_today, EMA_yesterday, periods = 5) {
+function getEMA(Price_today, EMA_yesterday, periods = undefined) {
+  if (!periods || periods <= 0)
+    throw new Error('Invalid "periods" for EMA calculation');
   const multiplier = 2 / (periods + 1);
   return Price_today * multiplier + EMA_yesterday * (1 - multiplier); // EMA_today
 }
 
-function normalizeResolutionCount(dataArrObject, resolution_count) {
+function normalizeCandleWidth(dataArrObject, candle_width) {
   const result = {};
   if (
     !dataArrObject.s ||
@@ -307,39 +324,39 @@ function normalizeResolutionCount(dataArrObject, resolution_count) {
       else if (key === "t") {
         // timestamp
         result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += resolution_count)
+        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
           result[key].push(dataArrObject[key][i]);
       } else if (key === "o") {
         // timestamp
         result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += resolution_count)
+        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
           result[key].push(dataArrObject[key][i]);
       } else if (key === "c") {
         // timestamp
         result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += resolution_count)
-          result[key].push(dataArrObject[key][i + resolution_count - 1]);
+        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
+          result[key].push(dataArrObject[key][i + candle_width - 1]);
       } else if (key === "h") {
         // timestamp
         result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += resolution_count)
+        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
           result[key].push(
-            Math.max(...dataArrObject[key].slice(i, i + resolution_count)),
+            Math.max(...dataArrObject[key].slice(i, i + candle_width)),
           );
       } else if (key === "l") {
         // timestamp
         result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += resolution_count)
+        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
           result[key].push(
-            Math.min(...dataArrObject[key].slice(i, i + resolution_count)),
+            Math.min(...dataArrObject[key].slice(i, i + candle_width)),
           );
       } else if (key === "v") {
         // timestamp
         result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += resolution_count)
+        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
           result[key].push(
             dataArrObject[key]
-              .slice(i, i + resolution_count)
+              .slice(i, i + candle_width)
               .reduce((total, num) => total + num, 0),
           );
       }
@@ -349,11 +366,19 @@ function normalizeResolutionCount(dataArrObject, resolution_count) {
 }
 
 function getUnderEMA(
-  resolution_count = 3,
-  resolution_unit = "H",
-  ema = 5,
-  cap = 100000,
+  candle_width = undefined,
+  candle_unit = undefined,
+  ema = undefined,
+  cap = undefined,
 ) {
+  if (!candle_width || !candle_unit || !ema || !cap)
+    throw new Error(
+      "Invalid parameters, please provide: candle_width, candle_unit, ema, cap" +
+        " (candle_width: should be integer)" +
+        " (candle_unit: should be 'H' for hours or 'D' for days)" +
+        " (ema: should be an integer)" +
+        " (cap: should be company size in [Crs])",
+    );
   return getLargeCaps(cap).then((largeCaps) => {
     console.log(`Checking ${largeCaps.length} large cap stocks...`);
     const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
@@ -362,19 +387,19 @@ function getUnderEMA(
         try {
           const history = await getStockHistory(
             stock.NSEID || stock.BSEID,
-            resolution_count,
-            resolution_unit,
+            candle_width,
+            candle_unit,
             ema,
           );
           if (
             history &&
-            history.ema5 &&
+            history.ema &&
             history.c &&
-            history.ema5.length > 0 &&
+            history.ema.length > 0 &&
             history.c.length > 0
           ) {
             const latestHigh = history.h[history.c.length - 1];
-            const latestEMA = history.ema5[history.ema5.length - 1];
+            const latestEMA = history.ema[history.ema.length - 1];
             const time = history.t[history.t.length - 1];
             if (latestHigh < latestEMA) {
               console.log(

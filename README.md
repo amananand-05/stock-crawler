@@ -104,35 +104,35 @@ curl "http://localhost:3000/api/large-caps?cap=50000"
 ```
 
 ### 4. Get Stock History
-**GET** `/api/get-stock-history?symbol={symbol}&resolution_count={count}&resolution_unit={unit}&ema={ema}`
+**GET** `/api/get-stock-history?symbol={symbol}&candle_count={count}&candle_unit={unit}&ema={ema}`
 
 Fetches historical stock data with optional EMA calculations.
 
 **Parameters:**
 - `symbol` (required): Stock symbol
-- `resolution_count` (required): Number of time units
-- `resolution_unit` (required): Time unit (e.g., "days", "months")
+- `candle_count` (required): Number of time units
+- `candle_unit` (required): Time unit (e.g., "days", "months")
 - `ema` (optional): EMA period for calculation
 
 **Example:**
 ```bash
-curl "http://localhost:3000/api/get-stock-history?symbol=RELIANCE&resolution_count=30&resolution_unit=days&ema=20"
+curl "http://localhost:3000/api/get-stock-history?symbol=RELIANCE&candle_count=30&candle_unit=days&ema=20"
 ```
 
 ### 5. Get Stocks Under EMA
-**GET** `/api/get-under-ema?resolution_count={count}&resolution_unit={unit}&ema={ema}&cap={cap}`
+**GET** `/api/get-under-ema?candle_count={count}&candle_unit={unit}&ema={ema}&cap={cap}`
 
 Finds stocks trading below their specified EMA values.
 
 **Parameters:**
-- `resolution_count` (required): Number of time units for EMA calculation
-- `resolution_unit` (required): Time unit (e.g., "days", "months")
+- `candle_count` (required): Number of time units for EMA calculation
+- `candle_unit` (required): Time unit (e.g., "days", "months")
 - `ema` (required): EMA period
 - `cap` (optional): Minimum market cap filter (default: 100000 crores)
 
 **Example:**
 ```bash
-curl "http://localhost:3000/api/get-under-ema?resolution_count=20&resolution_unit=days&ema=50&cap=10000"
+curl "http://localhost:3000/api/get-under-ema?candle_count=20&candle_unit=days&ema=50&cap=10000"
 ```
 
 ## Data Storage
@@ -200,13 +200,13 @@ curl "http://localhost:3000/api/stock?symbol=TCS"
 curl "http://localhost:3000/api/large-caps?cap=50000"
 
 # Find stocks trading below 20-day EMA
-curl "http://localhost:3000/api/get-under-ema?resolution_count=20&resolution_unit=days&ema=20"
+curl "http://localhost:3000/api/get-under-ema?candle_count=20&candle_unit=days&ema=20"
 ```
 
 ### Historical Analysis
 ```bash
 # Get 30-day history with 20-period EMA for RELIANCE
-curl "http://localhost:3000/api/get-stock-history?symbol=RELIANCE&resolution_count=30&resolution_unit=days&ema=20"
+curl "http://localhost:3000/api/get-stock-history?symbol=RELIANCE&candle_count=30&candle_unit=days&ema=20"
 ```
 
 ## Contributing
@@ -235,16 +235,16 @@ curl --location 'http://localhost:3000/api/stock?symbol=TI01'
 ```
 2. get `/api/large-caps`
 ```text
-curl --location 'http://localhost:3000/api/large-caps?capSize=100000' \
+curl --location 'http://localhost:3000/api/large-caps?cap=100000' \
 --header 'Content-Type: application/json'
 ```
 3. get `/api/get-stock-history`
 ```text
-curl --location 'http://localhost:3000/api/get-stock-history?symbol=VBL&resolution_count=3&resolution_unit=H&ema=5'
+curl --location 'http://localhost:3000/api/get-stock-history?symbol=VBL&candle_count=3&candle_unit=H&ema=5'
 ```
 4. get `/api/get-under-ema`
 ```text
-curl --location 'http://localhost:3000/api/get-under-ema?resolution_count=1&resolution_unit=D&ema=5&cap=100000'
+curl --location 'http://localhost:3000/api/get-under-ema?candle_count=1&candle_unit=D&ema=5&cap=100000'
 ```
 5. get `/api/sync-symbols` (disabled in code)
 ```text

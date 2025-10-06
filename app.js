@@ -44,7 +44,7 @@ app.get("/api/sync-symbols", async (req, res, next) => {
 
 app.get("/api/large-caps", async (req, res, next) => {
   try {
-    const result = await getLargeCaps(req.query.cap ?? 100000);
+    const result = await getLargeCaps(req.query.cap);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -55,8 +55,8 @@ app.get("/api/get-stock-history", async (req, res, next) => {
   try {
     const result = await getStockHistory(
       req.query.symbol,
-      req.query.resolution_count,
-      req.query.resolution_unit,
+      req.query.candle_width,
+      req.query.candle_unit,
       req.query.ema,
     );
     res.status(200).json(result);
@@ -68,10 +68,10 @@ app.get("/api/get-stock-history", async (req, res, next) => {
 app.get("/api/get-under-ema", async (req, res, next) => {
   try {
     const result = await getUnderEMA(
-      req.query.resolution_count,
-      req.query.resolution_unit,
+      req.query.candle_width,
+      req.query.candle_unit,
       req.query.ema,
-      req.query.cap ?? 100000,
+      req.query.cap,
     );
     res.status(200).json(result);
   } catch (error) {
