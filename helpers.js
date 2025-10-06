@@ -250,7 +250,14 @@ async function getStockHistory(
   currencyCode = "INR",
 ) {
   try {
-    if (!symbol || symbol === "" || !candle_width || !candle_unit || !ema)
+    if (
+      !symbol ||
+      symbol === "" ||
+      !candle_width ||
+      !candle_unit ||
+      !["H", "D"].includes(candle_unit) ||
+      !ema
+    )
       throw new Error(
         "Please provide:" +
           " (symbol: should be NSEID)" +
@@ -293,8 +300,7 @@ async function getStockHistory(
     }
     return null;
   } catch (error) {
-    if (error?.message && error.message.includes("Please provide"))
-      throw error;
+    if (error?.message && error.message.includes("Please provide")) throw error;
     return null;
   }
 }
@@ -371,7 +377,13 @@ function getUnderEMA(
   ema = undefined,
   cap = undefined,
 ) {
-  if (!candle_width || !candle_unit || !ema || !cap)
+  if (
+    !candle_width ||
+    !candle_unit ||
+    !["H", "D"].includes(candle_unit) ||
+    !ema ||
+    !cap
+  )
     throw new Error(
       "Invalid parameters, please provide: candle_width, candle_unit, ema, cap" +
         " (candle_width: should be integer)" +
