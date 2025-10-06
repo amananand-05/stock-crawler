@@ -385,7 +385,7 @@ function getUnderEMA(
     !cap
   )
     throw new Error(
-      "Invalid parameters, please provide: candle_width, candle_unit, ema, cap" +
+      "Please provide:" +
         " (candle_width: should be integer)" +
         " (candle_unit: should be 'H' for hours or 'D' for days)" +
         " (ema: should be an integer)" +

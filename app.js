@@ -10,6 +10,8 @@ const {
   getUnderEMA,
 } = require("./helpers");
 
+const { backTrackStock } = require("./backTracker");
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -79,6 +81,19 @@ app.get("/api/get-under-ema", async (req, res, next) => {
   }
 });
 
+app.get("/api/back-track", async (req, res, next) => {
+  try {
+    const result = await backTrackStock(
+      req.query.statergy,
+      req.query.symbol, // NSEID
+      req.query.investmentPerPurchase,
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error(error.stack);
@@ -108,6 +123,7 @@ loadModules()
       console.log(
         `   GET    /api/get-under-ema         - Get stocks under EMA`,
       );
+      console.log(`   GET    /api/back-tract         - Back track stock data`);
     });
   })
   .catch((err) => {
