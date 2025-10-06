@@ -84,7 +84,7 @@ app.get("/api/get-under-ema", async (req, res, next) => {
 app.get("/api/back-track", async (req, res, next) => {
   try {
     const result = await backTrackStock(
-      req.query.statergy,
+      req.query.strategy,
       req.query.symbol, // NSEID
       req.query.investmentPerPurchase,
     );
