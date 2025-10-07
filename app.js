@@ -8,6 +8,7 @@ const {
   getLargeCaps,
   getStockHistory,
   getUnderEMA,
+  getAllFutureLessThanCurrent,
 } = require("./helpers");
 
 const { backTrackStock } = require("./backTracker");
@@ -81,6 +82,15 @@ app.get("/api/get-under-ema", async (req, res, next) => {
   }
 });
 
+app.get("/api/future-less-than-current", async (req, res, next) => {
+  try {
+    const result = await getAllFutureLessThanCurrent(req.query.cap);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/back-track", async (req, res, next) => {
   try {
     const result = await backTrackStock(
@@ -110,20 +120,27 @@ loadModules()
       console.log(`👋 Hii... there!`);
       console.log(`🚀 Stock Crawler API server running on port ${port}`);
       console.log(`📊 Available endpoints:`);
-      console.log(`   GET    /api/stock?symbol=:id      - Get stock info`);
+      console.log(`   GET    /api/stock?symbol=:id          - Get stock info`);
       console.log(
-        `   GET    /api/sync-symbols          - Fetch and sync all symbols`,
+        `   GET    /api/sync-symbols              - Fetch and sync all symbols`,
       );
       console.log(
-        `   GET    /api/large-caps            - Fetch large-caps stocks`,
+        `   GET    /api/large-caps                - Fetch large-caps stocks`,
       );
       console.log(
-        `   GET    /api/get-stock-history     - Get stock history with EMA`,
+        `   GET    /api/get-stock-history         - Get stock history with EMA`,
       );
       console.log(
-        `   GET    /api/get-under-ema         - Get stocks under EMA`,
+        `   GET    /api/get-under-ema             - Get stocks under EMA`,
       );
-      console.log(`   GET    /api/back-tract         - Back track stock data`);
+
+      console.log(
+        `   GET    /api/future-less-than-current  - Get future stocks less than current`,
+      );
+
+      console.log(
+        `   GET    /api/back-track                - Back track stock data`,
+      );
     });
   })
   .catch((err) => {
