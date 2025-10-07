@@ -251,3 +251,8 @@ curl --location 'http://localhost:3000/api/get-under-ema?candle_count=1&candle_u
 curl --location 'http://localhost:3000/api/sync-symbols' \
 --header 'Content-Type: application/json'
 ```
+
+6. get /api/future-less-than-current
+```text
+curl --location 'http://localhost:3000/api/future-less-than-current?cap=10000'
+```
