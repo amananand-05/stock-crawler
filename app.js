@@ -138,7 +138,7 @@ loadModules()
         `   GET    /api/future-less-than-current  - Get future stocks less than current`,
       );
       console.log(
-        "NEW:\n\t curl --location 'http://localhost:3000/api/future-less-than-current?cap=100000' \n",
+        "   NEW:\n\t curl --location 'http://localhost:3000/api/future-less-than-current?cap=100000' \n",
       );
 
       console.log(
