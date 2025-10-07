@@ -247,6 +247,7 @@ async function getStockHistory(
   ema = undefined,
   from = 0,
   to = Math.floor(Date.now() / 1000),
+  countback = undefined,
   currencyCode = "INR",
 ) {
   try {
@@ -274,7 +275,7 @@ async function getStockHistory(
         `&resolution=${candle_unit === "H" ? 60 : "1D"}` +
         `&from=${from}` +
         `&to=${to}` +
-        `&countback=${candle_width * 40 - 1}` +
+        `&countback=${countback ?? candle_width * 40 - 1}` +
         `&currencyCode=${currencyCode}`,
       { httpsAgent: agent },
     );
