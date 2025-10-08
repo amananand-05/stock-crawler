@@ -156,6 +156,7 @@ async function getLargeCaps(cap = undefined) {
             Name: x.company,
             NSEID: x.NSEID,
             BSEID: x.BSEID,
+            MKTCAP: x.MKTCAP,
             exchange: x.exchange,
             symbol: x.symbol,
           };
@@ -526,8 +527,9 @@ async function getFutureDerivatives(symbol) {
       .filter((x) => x.metadata.instrumentType === "Stock Futures")
       .map((x) => ({
         // symbol,
-        expiryDate: x.metadata.expiryDate,
         "Future ClosePrice": x.metadata.closePrice,
+        "Future LastPrice": x.metadata.lastPrice,
+        expiryDate: x.metadata.expiryDate,
       }));
   } catch (error) {
     throw error;
@@ -551,7 +553,11 @@ async function getAllFutureLessThanCurrent(cap) {
           );
           if (currentInfo && currentInfo.pricecurrent) {
             const underFutures = futures.filter(
-              (x) => x["Future ClosePrice"] <= currentInfo.pricecurrent,
+              (x) =>
+                (x["Future ClosePrice"] === 0
+                  ? x["Future LastPrice"]
+                  : x["Future ClosePrice"]) <= currentInfo.pricecurrent &&
+                x["Future LastPrice"] !== 0,
             );
             if (underFutures.length > 0) {
               console.log(
@@ -561,6 +567,8 @@ async function getAllFutureLessThanCurrent(cap) {
                 "Company Name": stock["Full Name"],
                 "Spot Price": currentInfo.pricecurrent,
                 ...x,
+                "less percent%": `-${parseFloat((currentInfo.pricecurrent - (x["Future ClosePrice"] === 0 ? x["Future LastPrice"] : x["Future ClosePrice"])) * (100 / currentInfo.pricecurrent)).toFixed(3)}%`,
+                "Mkt Cap:": currentInfo.MKTCAP,
               }));
             }
           }
