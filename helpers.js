@@ -25,6 +25,7 @@ async function getSymbolCurrInfo(symbol = undefined) {
   const exchanges = ["nse", "bse"];
   for (const exchange of exchanges) {
     try {
+      //[MC-FETCH]
       const result = await axios.get(
         `https://priceapi.moneycontrol.com/pricefeed/${exchange}/equitycash/${symbol}`,
         { httpsAgent: agent },
@@ -46,6 +47,7 @@ async function getSymbolCurrInfo(symbol = undefined) {
 // Process each symbol combo
 async function fetchSymbolSuggestion(combo) {
   try {
+    //[MC-FETCH]
     const result = await axios.get(
       `https://www.moneycontrol.com/mccode/common/autosuggestion_solr.php?classic=true&query=${combo}&type=1&format=json&callback=suggest1`,
       { httpsAgent: agent },
@@ -272,6 +274,7 @@ async function getStockHistory(
 
     candle_width = parseInt(candle_width);
     ema = parseInt(ema);
+    //[MC-FETCH]
     const result = await axios.get(
       `https://priceapi.moneycontrol.com/techCharts/indianMarket/stock/history?` +
         `symbol=${symbol}` +
@@ -464,6 +467,7 @@ async function getNSECookie() {
       return NSE_COOKIE_CACHE.cookie;
     }
 
+    //[NSE-FETCH]
     let result = await axios.get(
       // "https://www.nseindia.com/get-quotes/derivatives?symbol=DABUR",
       "https://www.nseindia.com/get-quotes/derivatives",
@@ -504,6 +508,7 @@ async function getNSECookie() {
 async function getDerivatives(symbol) {
   try {
     const cookie = await getNSECookie();
+    //[NSE-FETCH]
     const allDerivatives = await axios.get(
       `https://www.nseindia.com/api/quote-derivative?symbol=${symbol}`,
       {
@@ -517,6 +522,32 @@ async function getDerivatives(symbol) {
     return allDerivatives?.data?.stocks;
   } catch (error) {
     throw error;
+  }
+}
+
+async function getNSESymbolHistory(symbol) {
+  try {
+    if (!symbol || symbol === "")
+      throw new Error("Invalid symbol, please provide: symbol, it is NSEID");
+    const cookie = await getNSECookie();
+    //[NSE-FETCH]
+    const result = await axios.get(
+      "https://www.nseindia.com/api/NextApi/apiClient/historicalGraph?" +
+        "functionName=getIndexChart" +
+        `&index=${symbol}` + // NIFTY%20SMLCAP%20100
+        "&flag=15Y",
+      {
+        httpsAgent: agent,
+        headers: {
+          Cookie: cookie,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
+        },
+      },
+    );
+    return result?.data?.data;
+  } catch (error) {
+    if (error?.message && error.message.includes("Please provide")) throw error;
+    return null;
   }
 }
 
@@ -601,6 +632,7 @@ module.exports = {
   getStockHistory,
   getUnderEMA,
   getAllFutureLessThanCurrent,
+  getNSESymbolHistory,
 };
 
 // NSE data sample
@@ -608,6 +640,7 @@ module.exports = {
 //   try {
 //     const symbol = "DABUR";
 //     const cookie = await getNSECookie();
+//     [NSE-FETCH]
 //     const allDerivatives = await axios.get(
 //       `https://www.nseindia.com/api/quote-derivative?symbol=${symbol}`,
 //       {

@@ -97,6 +97,7 @@ app.get("/api/back-track", async (req, res, next) => {
       req.query.strategy,
       req.query.symbol, // NSEID
       req.query.investmentPerPurchase,
+      req.query.percentageChange,
     );
     res.status(200).json(result);
   } catch (error) {
