@@ -567,7 +567,7 @@ async function getFutureDerivatives(symbol) {
   }
 }
 
-async function getAllFutureLessThanCurrent(cap) {
+async function getAllFutureCompareToCurrent(cap, comparator = "less") {
   let stocksByCap = await getLargeCaps(cap);
 
   await getNSECookie();
@@ -583,13 +583,18 @@ async function getAllFutureLessThanCurrent(cap) {
             stock.symbol, // it is sc_id from money control
           );
           if (currentInfo && currentInfo.pricecurrent) {
-            const underFutures = futures.filter(
-              (x) =>
-                (x["Future ClosePrice"] === 0
+            const underFutures = futures.filter((x) => {
+              const futurePrice =
+                x["Future ClosePrice"] === 0
                   ? x["Future LastPrice"]
-                  : x["Future ClosePrice"]) <= currentInfo.pricecurrent &&
-                x["Future LastPrice"] !== 0,
-            );
+                  : x["Future ClosePrice"];
+              return (
+                (comparator === "less"
+                  ? futurePrice <= currentInfo.pricecurrent
+                  : futurePrice >= currentInfo.pricecurrent) &&
+                x["Future LastPrice"] !== 0
+              );
+            });
             if (underFutures.length > 0) {
               console.log(
                 `Stock ${stock.Name} (${stock.NSEID || stock.BSEID}) has ${underFutures.length} futures under current price.`,
@@ -598,7 +603,7 @@ async function getAllFutureLessThanCurrent(cap) {
                 "Company Name": stock["Full Name"],
                 "Spot Price": currentInfo.pricecurrent,
                 ...x,
-                "less percent%": `-${parseFloat((currentInfo.pricecurrent - (x["Future ClosePrice"] === 0 ? x["Future LastPrice"] : x["Future ClosePrice"])) * (100 / currentInfo.pricecurrent)).toFixed(3)}%`,
+                "change percent%": `${parseFloat(((x["Future ClosePrice"] === 0 ? x["Future LastPrice"] : x["Future ClosePrice"]) - currentInfo.pricecurrent) * (100 / currentInfo.pricecurrent)).toFixed(3)}`,
                 "Mkt Cap:": currentInfo.MKTCAP,
               }));
             }
@@ -631,7 +636,7 @@ module.exports = {
   getLargeCaps,
   getStockHistory,
   getUnderEMA,
-  getAllFutureLessThanCurrent,
+  getAllFutureCompareToCurrent,
   getNSESymbolHistory,
 };
 

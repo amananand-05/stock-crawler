@@ -8,7 +8,7 @@ const {
   getLargeCaps,
   getStockHistory,
   getUnderEMA,
-  getAllFutureLessThanCurrent,
+  getAllFutureCompareToCurrent,
 } = require("./helpers");
 
 const { backTrackStock } = require("./backTracker");
@@ -84,8 +84,21 @@ app.get("/api/get-under-ema", async (req, res, next) => {
 
 app.get("/api/future-less-than-current", async (req, res, next) => {
   try {
-    const result = await getAllFutureLessThanCurrent(req.query.cap);
-    res.status(200).json(result);
+    const result = await getAllFutureCompareToCurrent(req.query.cap, "less");
+    res
+      .status(200)
+      .json(result.sort((a, b) => a["change percent%"] - b["change percent%"]));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/future-more-than-current", async (req, res, next) => {
+  try {
+    const result = await getAllFutureCompareToCurrent(req.query.cap, "more");
+    res
+      .status(200)
+      .json(result.sort((a, b) => b["change percent%"] - a["change percent%"]));
   } catch (error) {
     next(error);
   }

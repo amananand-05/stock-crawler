@@ -254,5 +254,11 @@ curl --location 'http://localhost:3000/api/sync-symbols' \
 
 6. get /api/future-less-than-current
 ```text
-curl --location 'http://localhost:3000/api/future-less-than-current?cap=100000'
+curl --location 'http://localhost:3000/api/future-less-than-current?cap=300000'
+```
+
+
+7. get /api/future-more-than-current
+```text
+curl --location 'http://localhost:3000/api/future-more-than-current?cap=300000'
 ```
