@@ -315,7 +315,7 @@ app.get("/", (req, res) => {
         </style>
       </head>
       <body>
-        <h1>📊 Stock Crawler API Dashboard</h1>
+        <h1>📊 Stock Crawler Dashboard</h1>
 
         <form id="apiForm">
           <label for="endpoint">Select Endpoint</label>
