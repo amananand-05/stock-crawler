@@ -506,7 +506,7 @@ async function getEma20_50_100_under_200(
     (!from_ema_200_plus_x_percent && from_ema_200_plus_x_percent !== 0) ||
     typeof from_ema_200_plus_x_percent !== "number"
   )
-    throw new Error("From EMA 200 plus % should be a number");
+    throw new Error("x % above EMA 200 should be a number, like: 2 or -2");
   let stocksByCap = await getLargeCaps(cap);
   // let ema20_50_100_under_200 = [];
   console.log(

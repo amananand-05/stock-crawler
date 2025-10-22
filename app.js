@@ -115,7 +115,7 @@ app.get("/", (req, res) => {
             "/api/get-ema-20-50-100-under-200": [
               { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" },
               { label: "(Optional) Candle Width in Days", name: "candle_width_in_days", placeholder: "default value 5" },
-              { label: "(Optional) From EMA 200 plus x %", name: "from_ema_200_plus_x_percent", placeholder: "default value of x is 0" }
+              { label: "(Optional) x % above EMA 200", name: "from_ema_200_plus_x_percent", placeholder: "default value of x is 0" }
             ],
             "/api/stock": [
               { label: "Stock Symbol", name: "symbol", placeholder: "e.g. INFY" }
