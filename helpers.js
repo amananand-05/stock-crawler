@@ -495,9 +495,15 @@ async function getAllFutureCompareToCurrent(cap, comparator = "less") {
   return results.flat();
 }
 
-async function getEma20_50_100_under_200(cap, candle_width_in_days = 5) {
-  if (candle_width_in_days && typeof candle_width_in_days !== "number")
-    throw new Error("Invalid candle_width_in_days, should be a number");
+async function getEma20_50_100_under_200(
+  cap,
+  candle_width_in_days = 5,
+  from_ema_200_plus_x_percent = 0,
+) {
+  if (!candle_width_in_days || typeof candle_width_in_days !== "number")
+    throw new Error("Candle Width in Days, should be a number");
+  if ((!from_ema_200_plus_x_percent &&  from_ema_200_plus_x_percent !== 0) || typeof from_ema_200_plus_x_percent !== "number")
+    throw new Error("From EMA 200 plus % should be a number");
   let stocksByCap = await getLargeCaps(cap);
   // let ema20_50_100_under_200 = [];
   console.log(
@@ -507,7 +513,7 @@ async function getEma20_50_100_under_200(cap, candle_width_in_days = 5) {
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
-        if (stock.NSEID === "ATHERENERG") console.log("here");
+        if (stock.NSEID === "LICI") console.log("here");
         let history = await getNSEStockHistory(
           stock.NSEID || stock.BSEID,
           "EQ",
@@ -518,10 +524,17 @@ async function getEma20_50_100_under_200(cap, candle_width_in_days = 5) {
         history = addEmaToHistory(history, 50);
         history = addEmaToHistory(history, 20);
         const n = history.c.length - 1; // last
+        if (!history[`ema20`]) throw new Error("no ema20 for " + stock.NSEID);
+        if (!history[`ema50`]) throw new Error("no ema50 for " + stock.NSEID);
+        if (!history[`ema100`]) throw new Error("no ema100 for " + stock.NSEID);
+        if (!history[`ema200`]) throw new Error("no ema200 for " + stock.NSEID);
         if (
-          history[`ema20`][n] <= history[`ema200`][n] * 1.05 &&
-          history[`ema50`][n] <= history[`ema200`][n] * 1.05 &&
-          history[`ema100`][n] <= history[`ema200`][n] * 1.05
+          history[`ema20`][n] <=
+            history[`ema200`][n] * (1 + 0.01 * from_ema_200_plus_x_percent) &&
+          history[`ema50`][n] <=
+            history[`ema200`][n] * (1 + 0.01 * from_ema_200_plus_x_percent) &&
+          history[`ema100`][n] <=
+            history[`ema200`][n] * (1 + 0.01 * from_ema_200_plus_x_percent)
         ) {
           console.log(
             `Stock ${stock.Name} (${stock.NSEID || stock.BSEID}) meets EMA conditions.`,

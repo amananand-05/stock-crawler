@@ -8,9 +8,9 @@ const symbolMetadataPath = path.join(__dirname, "symbolMetadata.json");
 // Load the symbols from symbolsDb.json
 async function getLargeCaps(cap = undefined) {
   try {
-    if (!cap)
+    if (!cap || typeof cap !== "number")
       throw new Error(
-        "Invalid cap, please provide company size 'cap' in (number of Crs)",
+        "Please provide Market Cap (number in Crs)",
       );
     const data = await fs.readFile(symbolMetadataPath, "utf-8");
     let metadata = JSON.parse(data);

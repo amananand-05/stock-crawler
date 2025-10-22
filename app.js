@@ -103,8 +103,11 @@ app.get("/api/back-track", async (req, res, next) => {
 app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
   try {
     const result = await getEma20_50_100_under_200(
-      req?.query?.cap,
+        parseInt(req?.query?.cap),
       parseInt(req?.query?.candle_width_in_days ?? 5), // for a week
+        parseInt(req?.query?.from_ema_200_plus_x_percent ?? 0), // for a week
+
+
     );
     res.status(200).json(result);
   } catch (error) {
@@ -114,7 +117,7 @@ app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
 
 app.get("/api/future-less-than-current", async (req, res, next) => {
   try {
-    const result = await getAllFutureCompareToCurrent(req.query.cap, "less");
+    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "less");
     res
       .status(200)
       .json(result.sort((a, b) => a["change percent%"] - b["change percent%"]));
@@ -125,7 +128,7 @@ app.get("/api/future-less-than-current", async (req, res, next) => {
 
 app.get("/api/future-more-than-current", async (req, res, next) => {
   try {
-    const result = await getAllFutureCompareToCurrent(req.query.cap, "more");
+    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "more");
     res
       .status(200)
       .json(result.sort((a, b) => b["change percent%"] - a["change percent%"]));
@@ -136,150 +139,6 @@ app.get("/api/future-more-than-current", async (req, res, next) => {
 
 // =========================== PRODUCTION ===========================
 
-// app.get("/", (req, res) => {
-//   res.send(`
-//     <html>
-//       <head>
-//         <title>📊 Stock Crawler API</title>
-//         <style>
-//           body {
-//             font-family: Arial, sans-serif;
-//             padding: 20px;
-//             background: #f7f9fc;
-//           }
-//           h1 { color: #2b6cb0; }
-//           form {
-//             margin-bottom: 20px;
-//             padding: 20px;
-//             background: white;
-//             border-radius: 10px;
-//             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-//           }
-//           label { display: block; margin-top: 10px; font-weight: bold; }
-//           input, select {
-//             width: 100%;
-//             padding: 8px;
-//             margin-top: 5px;
-//             border: 1px solid #ccc;
-//             border-radius: 6px;
-//           }
-//           button {
-//             margin-top: 15px;
-//             background: #2b6cb0;
-//             color: white;
-//             border: none;
-//             padding: 10px 15px;
-//             border-radius: 6px;
-//             cursor: pointer;
-//           }
-//           button:hover { background: #2c5282; }
-//           table {
-//             width: 100%;
-//             border-collapse: collapse;
-//             margin-top: 30px;
-//             background: white;
-//           }
-//           th, td {
-//             border: 1px solid #ddd;
-//             padding: 8px;
-//             text-align: left;
-//           }
-//           th { background: #f0f0f0; }
-//           pre { background: #f9f9f9; padding: 10px; border-radius: 6px; }
-//         </style>
-//       </head>
-//       <body>
-//         <h1>📊 Stock Crawler API Dashboard</h1>
-//
-//         <form id="apiForm">
-//           <label for="endpoint">Select Endpoint</label>
-//           <select id="endpoint" name="endpoint">
-//             <!--
-//             <option value="/api/stock">/api/stock</option>
-//             <option value="/api/large-caps">/api/large-caps</option>
-//             <option value="/api/get-stock-history">/api/get-stock-history</option>
-//             <option value="/api/get-under-ema">/api/get-under-ema</option>
-//             <option value="/api/back-track">/api/back-track</option>
-//             -->
-//             <option value="/api/future-less-than-current">/future-less-than-current</option>
-//             <option value="/api/future-more-than-current">/future-more-than-current</option>
-//           </select>
-//
-//           <label for="params">Query Parameters (JSON format)</label>
-//           <input id="params" placeholder='{"symbol": "RELIANCE", "ema": 50}' />
-//
-//           <button type="submit">Fetch Data</button>
-//         </form>
-//
-//         <div id="result"></div>
-//
-//         <script>
-//           const form = document.getElementById("apiForm");
-//           const resultDiv = document.getElementById("result");
-//
-//           form.addEventListener("submit", async (e) => {
-//             e.preventDefault();
-//             const endpoint = document.getElementById("endpoint").value;
-//             let params = {};
-//             try {
-//               params = JSON.parse(document.getElementById("params").value || "{}");
-//             } catch (err) {
-//               alert("Invalid JSON in parameters!");
-//               return;
-//             }
-//
-//             const queryString = new URLSearchParams(params).toString();
-//             const url = endpoint + (queryString ? "?" + queryString : "");
-//
-//             resultDiv.innerHTML = "<p>Loading...</p>";
-//
-//             try {
-//               const res = await fetch(url);
-//               const data = await res.json();
-//
-//               if (Array.isArray(data) && data.length > 0) {
-//                 // Render as table
-//                 const headers = Object.keys(data[0]);
-//                 const table = document.createElement("table");
-//
-//                 const thead = document.createElement("thead");
-//                 const trHead = document.createElement("tr");
-//                 headers.forEach(h => {
-//                   const th = document.createElement("th");
-//                   th.textContent = h;
-//                   trHead.appendChild(th);
-//                 });
-//                 thead.appendChild(trHead);
-//                 table.appendChild(thead);
-//
-//                 const tbody = document.createElement("tbody");
-//                 data.forEach(row => {
-//                   const tr = document.createElement("tr");
-//                   headers.forEach(h => {
-//                     const td = document.createElement("td");
-//                     td.textContent = row[h];
-//                     tr.appendChild(td);
-//                   });
-//                   tbody.appendChild(tr);
-//                 });
-//                 table.appendChild(tbody);
-//                 resultDiv.innerHTML = "";
-//                 resultDiv.appendChild(table);
-//               } else if (typeof data === "object") {
-//                 resultDiv.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
-//               } else {
-//                 resultDiv.innerHTML = "<pre>" + data + "</pre>";
-//               }
-//
-//             } catch (err) {
-//               resultDiv.innerHTML = "<p style='color:red;'>Error: " + err.message + "</p>";
-//             }
-//           });
-//         </script>
-//       </body>
-//     </html>
-//   `);
-// });
 app.get("/", (req, res) => {
   res.send(`
     <html>
@@ -338,16 +197,16 @@ app.get("/", (req, res) => {
         <form id="apiForm">
           <label for="endpoint">Select Endpoint</label>
           <select id="endpoint" name="endpoint">
-          <!--
+            <option value="/api/future-more-than-current">Future More Than Current</option>
+            <option value="/api/future-less-than-current">Future Less Than Current</option>
+            <option value="/api/get-ema-20-50-100-under-200">EMA (20 50 100) under 200</option>
+            <!-- Uncomment others as needed
             <option value="/api/stock">/api/stock</option>
             <option value="/api/large-caps">/api/large-caps</option>
             <option value="/api/get-stock-history">/api/get-stock-history</option>
             <option value="/api/get-under-ema">/api/get-under-ema</option>
             <option value="/api/back-track">/api/back-track</option>
             -->
-            <option value="/api/get-ema-20-50-100-under-200">EMA (20 50 100) under 200</option>
-            <option value="/api/future-less-than-current">Future Less Than Current</option>
-            <option value="/api/future-more-than-current">Future More Than Current</option>
           </select>
 
           <div id="paramsContainer"></div>
@@ -359,14 +218,41 @@ app.get("/", (req, res) => {
 
         <script>
           const endpointParams = {
-            "/api/stock": ["symbol"],
-            "/api/large-caps": ["cap"],
-            "/api/get-stock-history": ["symbol", "candle_width", "candle_unit", "ema"],
-            "/api/get-under-ema": ["candle_width", "candle_unit", "ema", "cap"],
-            "/api/get-ema-20-50-100-under-200": ["cap", "candle_width_in_days"],
-            "/api/future-less-than-current": ["cap"],
-            "/api/future-more-than-current": ["cap"],
-            "/api/back-track": ["strategy", "symbol", "investmentPerPurchase", "percentageChange"]
+            "/api/future-less-than-current": [
+              { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" }
+            ],
+            "/api/future-more-than-current": [
+              { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" }
+            ],
+            "/api/get-ema-20-50-100-under-200": [
+              { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" },
+              { label: "(Optional) Candle Width in Days", name: "candle_width_in_days", placeholder: "default value 5" },
+              { label: "(Optional) From EMA 200 plus x %", name: "from_ema_200_plus_x_percent", placeholder: "default value of x is 0" }
+            ],
+            "/api/stock": [
+              { label: "Stock Symbol", name: "symbol", placeholder: "e.g. INFY" }
+            ],
+            "/api/large-caps": [
+              { label: "Market Cap (in Crs)", name: "cap", placeholder: "Number in Crores" }
+            ],
+            "/api/get-stock-history": [
+              { label: "Stock Symbol", name: "symbol", placeholder: "e.g. RELIANCE" },
+              { label: "Candle Width", name: "candle_width", placeholder: "e.g. 1" },
+              { label: "Candle Unit (days/hours)", name: "candle_unit", placeholder: "e.g. day" },
+              { label: "EMA Value", name: "ema", placeholder: "e.g. 20" }
+            ],
+            "/api/get-under-ema": [
+              { label: "Candle Width", name: "candle_width", placeholder: "e.g. 1" },
+              { label: "Candle Unit", name: "candle_unit", placeholder: "day/hour" },
+              { label: "EMA", name: "ema", placeholder: "e.g. 50" },
+              { label: "Market Cap (in Crs)", name: "cap", placeholder: "e.g. 1000" }
+            ],
+            "/api/back-track": [
+              { label: "Strategy", name: "strategy", placeholder: "e.g. swing" },
+              { label: "Stock Symbol", name: "symbol", placeholder: "e.g. TCS" },
+              { label: "Investment per Purchase", name: "investmentPerPurchase", placeholder: "e.g. 10000" },
+              { label: "Percentage Change", name: "percentageChange", placeholder: "e.g. 5" }
+            ]
           };
 
           const endpointSelect = document.getElementById("endpoint");
@@ -383,10 +269,12 @@ app.get("/", (req, res) => {
             }
             params.forEach(param => {
               const label = document.createElement("label");
-              label.textContent = param;
+              label.textContent = param.label;
+
               const input = document.createElement("input");
-              input.name = param;
-              input.placeholder = param;
+              input.name = param.name;
+              input.placeholder = param.placeholder || param.label;
+
               paramsContainer.appendChild(label);
               paramsContainer.appendChild(input);
             });
@@ -396,7 +284,7 @@ app.get("/", (req, res) => {
             renderParamInputs(endpointSelect.value);
           });
 
-          // Render defaults
+          // Initial render
           renderParamInputs(endpointSelect.value);
 
           form.addEventListener("submit", async (e) => {
@@ -461,7 +349,7 @@ app.get("/", (req, res) => {
 app.use((error, req, res, next) => {
   console.error(error.stack);
   res.status(500).json({
-    error: "Something went wrong!",
+    // error: "Something went wrong!",
     message: error.message,
   });
 });
