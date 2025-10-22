@@ -25,118 +25,6 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // Define routes
-app.get("/api/stock", async (req, res, next) => {
-  try {
-    const symbol = req.query.symbol;
-    const data = await getSymbolCurrInfo(symbol);
-    res.status(200).json(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get("/api/sync-symbols", async (req, res, next) => {
-  try {
-    // it should be done once in a while
-    if (false) {
-      await accAndPersistSymbols();
-      await syncSymbolsMetadata();
-    } else {
-      return res.status(200).json("sync skipped");
-    }
-    res.status(200).json(true);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get("/api/large-caps", async (req, res, next) => {
-  try {
-    const result = await getLargeCaps(req.query.cap);
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get("/api/get-stock-history", async (req, res, next) => {
-  try {
-    const result = await getStockHistory(
-      req.query.symbol,
-      req.query.candle_width,
-      req.query.candle_unit,
-      req.query.ema,
-    );
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get("/api/get-under-ema", async (req, res, next) => {
-  try {
-    const result = await getUnderEMA(
-      parseInt(req.query.candle_width),
-      req.query.candle_unit,
-      req.query.ema,
-      req.query.cap,
-    );
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-app.get("/api/back-track", async (req, res, next) => {
-  try {
-    const result = await backTrackStock(
-      req.query.strategy,
-      req.query.symbol, // NSEID
-      req.query.investmentPerPurchase,
-      req.query.percentageChange,
-    );
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
-  try {
-    const result = await getEma20_50_100_under_200(
-        parseInt(req?.query?.cap),
-      parseInt(req?.query?.candle_width_in_days ?? 5), // for a week
-        parseInt(req?.query?.from_ema_200_plus_x_percent ?? 0), // for a week
-
-
-    );
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get("/api/future-less-than-current", async (req, res, next) => {
-  try {
-    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "less");
-    res
-      .status(200)
-      .json(result.sort((a, b) => a["change percent%"] - b["change percent%"]));
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get("/api/future-more-than-current", async (req, res, next) => {
-  try {
-    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "more");
-    res
-      .status(200)
-      .json(result.sort((a, b) => b["change percent%"] - a["change percent%"]));
-  } catch (error) {
-    next(error);
-  }
-});
-
 // =========================== PRODUCTION ===========================
 
 app.get("/", (req, res) => {
@@ -192,7 +80,7 @@ app.get("/", (req, res) => {
         </style>
       </head>
       <body>
-        <h1>📊 Sumit Stock Crawler API Dashboard</h1>
+        <h1>📊 Sumit Stock Scanner Dashboard</h1>
 
         <form id="apiForm">
           <label for="endpoint">Select Endpoint</label>
@@ -345,6 +233,43 @@ app.get("/", (req, res) => {
   `);
 });
 
+app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
+  try {
+    const result = await getEma20_50_100_under_200(
+        parseInt(req?.query?.cap),
+        parseInt(req?.query?.candle_width_in_days ?? 5), // for a week
+        parseInt(req?.query?.from_ema_200_plus_x_percent ?? 0), // for a week
+
+
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/future-less-than-current", async (req, res, next) => {
+  try {
+    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "less");
+    res
+        .status(200)
+        .json(result.sort((a, b) => a["change percent%"] - b["change percent%"]));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/future-more-than-current", async (req, res, next) => {
+  try {
+    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "more");
+    res
+        .status(200)
+        .json(result.sort((a, b) => b["change percent%"] - a["change percent%"]));
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error(error.stack);
@@ -352,6 +277,86 @@ app.use((error, req, res, next) => {
     // error: "Something went wrong!",
     message: error.message,
   });
+});
+
+
+
+// =========================== NOT IN USE ===========================
+
+app.get("/api/stock", async (req, res, next) => {
+  try {
+    const symbol = req.query.symbol;
+    const data = await getSymbolCurrInfo(symbol);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/sync-symbols", async (req, res, next) => {
+  try {
+    // it should be done once in a while
+    if (false) {
+      await accAndPersistSymbols();
+      await syncSymbolsMetadata();
+    } else {
+      return res.status(200).json("sync skipped");
+    }
+    res.status(200).json(true);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/large-caps", async (req, res, next) => {
+  try {
+    const result = await getLargeCaps(req.query.cap);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/get-stock-history", async (req, res, next) => {
+  try {
+    const result = await getStockHistory(
+        req.query.symbol,
+        req.query.candle_width,
+        req.query.candle_unit,
+        req.query.ema,
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/get-under-ema", async (req, res, next) => {
+  try {
+    const result = await getUnderEMA(
+        parseInt(req.query.candle_width),
+        req.query.candle_unit,
+        req.query.ema,
+        req.query.cap,
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/back-track", async (req, res, next) => {
+  try {
+    const result = await backTrackStock(
+        req.query.strategy,
+        req.query.symbol, // NSEID
+        req.query.investmentPerPurchase,
+        req.query.percentageChange,
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Load ESM modules, then start server
