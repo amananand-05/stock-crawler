@@ -1,4 +1,5 @@
 @echo off
-git pull
-npm install --no-audit --no-fund
-npm start
+call git pull
+call npm install --no-audit --no-fund
+call npm start
+pause
