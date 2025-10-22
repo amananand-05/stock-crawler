@@ -80,7 +80,7 @@ app.get("/", (req, res) => {
         </style>
       </head>
       <body>
-        <h1>📊 Sumit Stock Scanner Dashboard</h1>
+        <h1>📊 Sumit's Stock Scanner</h1>
 
         <form id="apiForm">
           <label for="endpoint">Select Endpoint</label>
