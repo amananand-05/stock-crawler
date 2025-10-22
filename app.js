@@ -236,11 +236,9 @@ app.get("/", (req, res) => {
 app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
   try {
     const result = await getEma20_50_100_under_200(
-        parseInt(req?.query?.cap),
-        parseInt(req?.query?.candle_width_in_days ?? 5), // for a week
-        parseInt(req?.query?.from_ema_200_plus_x_percent ?? 0), // for a week
-
-
+      parseInt(req?.query?.cap),
+      parseInt(req?.query?.candle_width_in_days ?? 5), // for a week
+      parseInt(req?.query?.from_ema_200_plus_x_percent ?? 0), // for a week
     );
     res.status(200).json(result);
   } catch (error) {
@@ -250,10 +248,13 @@ app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
 
 app.get("/api/future-less-than-current", async (req, res, next) => {
   try {
-    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "less");
+    const result = await getAllFutureCompareToCurrent(
+      parseInt(req.query.cap),
+      "less",
+    );
     res
-        .status(200)
-        .json(result.sort((a, b) => a["change percent%"] - b["change percent%"]));
+      .status(200)
+      .json(result.sort((a, b) => a["change percent%"] - b["change percent%"]));
   } catch (error) {
     next(error);
   }
@@ -261,10 +262,13 @@ app.get("/api/future-less-than-current", async (req, res, next) => {
 
 app.get("/api/future-more-than-current", async (req, res, next) => {
   try {
-    const result = await getAllFutureCompareToCurrent(parseInt(req.query.cap), "more");
+    const result = await getAllFutureCompareToCurrent(
+      parseInt(req.query.cap),
+      "more",
+    );
     res
-        .status(200)
-        .json(result.sort((a, b) => b["change percent%"] - a["change percent%"]));
+      .status(200)
+      .json(result.sort((a, b) => b["change percent%"] - a["change percent%"]));
   } catch (error) {
     next(error);
   }
@@ -278,8 +282,6 @@ app.use((error, req, res, next) => {
     message: error.message,
   });
 });
-
-
 
 // =========================== NOT IN USE ===========================
 
@@ -320,10 +322,10 @@ app.get("/api/large-caps", async (req, res, next) => {
 app.get("/api/get-stock-history", async (req, res, next) => {
   try {
     const result = await getStockHistory(
-        req.query.symbol,
-        req.query.candle_width,
-        req.query.candle_unit,
-        req.query.ema,
+      req.query.symbol,
+      req.query.candle_width,
+      req.query.candle_unit,
+      req.query.ema,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -334,10 +336,10 @@ app.get("/api/get-stock-history", async (req, res, next) => {
 app.get("/api/get-under-ema", async (req, res, next) => {
   try {
     const result = await getUnderEMA(
-        parseInt(req.query.candle_width),
-        req.query.candle_unit,
-        req.query.ema,
-        req.query.cap,
+      parseInt(req.query.candle_width),
+      req.query.candle_unit,
+      req.query.ema,
+      req.query.cap,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -348,10 +350,10 @@ app.get("/api/get-under-ema", async (req, res, next) => {
 app.get("/api/back-track", async (req, res, next) => {
   try {
     const result = await backTrackStock(
-        req.query.strategy,
-        req.query.symbol, // NSEID
-        req.query.investmentPerPurchase,
-        req.query.percentageChange,
+      req.query.strategy,
+      req.query.symbol, // NSEID
+      req.query.investmentPerPurchase,
+      req.query.percentageChange,
     );
     res.status(200).json(result);
   } catch (error) {

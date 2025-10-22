@@ -502,7 +502,10 @@ async function getEma20_50_100_under_200(
 ) {
   if (!candle_width_in_days || typeof candle_width_in_days !== "number")
     throw new Error("Candle Width in Days, should be a number");
-  if ((!from_ema_200_plus_x_percent &&  from_ema_200_plus_x_percent !== 0) || typeof from_ema_200_plus_x_percent !== "number")
+  if (
+    (!from_ema_200_plus_x_percent && from_ema_200_plus_x_percent !== 0) ||
+    typeof from_ema_200_plus_x_percent !== "number"
+  )
     throw new Error("From EMA 200 plus % should be a number");
   let stocksByCap = await getLargeCaps(cap);
   // let ema20_50_100_under_200 = [];
