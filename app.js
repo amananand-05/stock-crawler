@@ -9,7 +9,12 @@ const {
   getStockHistory,
   getUnderEMA,
   getAllFutureCompareToCurrent,
+  getEma20_50_100_under_200,
 } = require("./helpers");
+
+const { normalizeCandleWidth, addEmaToHistory } = require("./common");
+
+const { getNSEStockHistory } = require("./nse");
 
 const { backTrackStock } = require("./backTracker");
 
@@ -71,10 +76,35 @@ app.get("/api/get-stock-history", async (req, res, next) => {
 app.get("/api/get-under-ema", async (req, res, next) => {
   try {
     const result = await getUnderEMA(
-      req.query.candle_width,
+      parseInt(req.query.candle_width),
       req.query.candle_unit,
       req.query.ema,
       req.query.cap,
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/api/back-track", async (req, res, next) => {
+  try {
+    const result = await backTrackStock(
+      req.query.strategy,
+      req.query.symbol, // NSEID
+      req.query.investmentPerPurchase,
+      req.query.percentageChange,
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
+  try {
+    const result = await getEma20_50_100_under_200(
+      req?.query?.cap,
+      parseInt(req?.query?.candle_width_in_days ?? 5), // for a week
     );
     res.status(200).json(result);
   } catch (error) {
@@ -104,19 +134,7 @@ app.get("/api/future-more-than-current", async (req, res, next) => {
   }
 });
 
-app.get("/api/back-track", async (req, res, next) => {
-  try {
-    const result = await backTrackStock(
-      req.query.strategy,
-      req.query.symbol, // NSEID
-      req.query.investmentPerPurchase,
-      req.query.percentageChange,
-    );
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+// =========================== PRODUCTION ===========================
 
 // app.get("/", (req, res) => {
 //   res.send(`
@@ -327,9 +345,9 @@ app.get("/", (req, res) => {
             <option value="/api/get-under-ema">/api/get-under-ema</option>
             <option value="/api/back-track">/api/back-track</option>
             -->
+            <option value="/api/get-ema-20-50-100-under-200">EMA (20 50 100) under 200</option>
             <option value="/api/future-less-than-current">Future Less Than Current</option>
             <option value="/api/future-more-than-current">Future More Than Current</option>
-            
           </select>
 
           <div id="paramsContainer"></div>
@@ -345,6 +363,7 @@ app.get("/", (req, res) => {
             "/api/large-caps": ["cap"],
             "/api/get-stock-history": ["symbol", "candle_width", "candle_unit", "ema"],
             "/api/get-under-ema": ["candle_width", "candle_unit", "ema", "cap"],
+            "/api/get-ema-20-50-100-under-200": ["cap", "candle_width_in_days"],
             "/api/future-less-than-current": ["cap"],
             "/api/future-more-than-current": ["cap"],
             "/api/back-track": ["strategy", "symbol", "investmentPerPurchase", "percentageChange"]
@@ -437,7 +456,6 @@ app.get("/", (req, res) => {
     </html>
   `);
 });
-
 
 // Error handling middleware
 app.use((error, req, res, next) => {

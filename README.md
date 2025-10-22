@@ -262,3 +262,18 @@ curl --location 'http://localhost:3000/api/future-less-than-current?cap=300000'
 ```text
 curl --location 'http://localhost:3000/api/future-more-than-current?cap=300000'
 ```
+
+
+
+1. rule:
+   [Stock]: 
+   20 ema   
+   50 ema
+   100 ema 
+   200 ema
+   weekly, monthly, daily
+
+
+
+
+   

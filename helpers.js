@@ -1,15 +1,16 @@
-const https = require("https");
+const { getNSEStockHistory } = require("./nse");
+const { addEmaToHistory } = require("./common");
+const { format } = require("date-fns");
+
 const fs = require("fs/promises");
 const path = require("path");
+const { getNSECookie, getNSEDerivatives } = require("./nse");
 
-// Create HTTPS agent (disable cert check for dev)
-const agent = new https.Agent({
-  rejectUnauthorized: false, // ⚠️ Only for development!
-});
+const { getLargeCaps } = require("./staticData");
+const { agent, getEMA, normalizeCandleWidth } = require("./common");
 
 let axios;
 let pLimit;
-let NSE_COOKIE_CACHE = { time: 0, cookie: "" };
 
 // Dynamically import axios and p-limit (ES modules)
 async function loadModules() {
@@ -129,41 +130,6 @@ async function loadSymbols() {
   try {
     const data = await fs.readFile(symbolsDbPath, "utf-8");
     return JSON.parse(data);
-  } catch (error) {
-    console.error("Error loading symbols:", error.message);
-    throw error;
-  }
-}
-
-// Load the symbols from symbolsDb.json
-async function getLargeCaps(cap = undefined) {
-  try {
-    if (!cap)
-      throw new Error(
-        'Invalid cap, please provide company size in (Crs): "cap"',
-      );
-    const data = await fs.readFile(symbolMetadataPath, "utf-8");
-    let metadata = JSON.parse(data);
-    return (
-      metadata
-        .filter((x) => (x.BSEID || x.NSEID) && x.exchange && x.exchange !== "-")
-        // .filter((x) => !x.exchange)
-        .filter((x) =>
-          x.MKTCAP ? typeof x.MKTCAP === "number" && x.MKTCAP > cap : false,
-        )
-        .map((x) => {
-          return {
-            "Market Capital": x.MKTCAP,
-            "Full Name": x.SC_FULLNM,
-            Name: x.company,
-            NSEID: x.NSEID,
-            BSEID: x.BSEID,
-            MKTCAP: x.MKTCAP,
-            exchange: x.exchange,
-            symbol: x.symbol,
-          };
-        })
-    );
   } catch (error) {
     console.error("Error loading symbols:", error.message);
     throw error;
@@ -312,72 +278,72 @@ async function getStockHistory(
   }
 }
 
-function getEMA(Price_today, EMA_yesterday, periods = undefined) {
-  if (!periods || periods <= 0)
-    throw new Error('Invalid "periods" for EMA calculation');
-  const multiplier = 2 / (periods + 1);
-  return Price_today * multiplier + EMA_yesterday * (1 - multiplier); // EMA_today
-}
+// function getEMA(priceCurr, EMALast, periods = undefined) {
+//   if (!periods || periods <= 0)
+//     throw new Error('Invalid "periods" for EMA calculation');
+//   const multiplier = 2 / (periods + 1);
+//   return priceCurr * multiplier + EMALast * (1 - multiplier); // EMA_today
+// }
 
-function normalizeCandleWidth(dataArrObject, candle_width) {
-  const result = {};
-  if (
-    !dataArrObject.s ||
-    !dataArrObject.t ||
-    !dataArrObject.o ||
-    !dataArrObject.c ||
-    !dataArrObject.h ||
-    !dataArrObject.l ||
-    !dataArrObject.v
-  )
-    throw new Error("faulty historical data");
-  else {
-    ["s", "t", "o", "h", "l", "c", "v"].forEach((key) => {
-      if (key === "s") result[key] = dataArrObject[key];
-      else if (key === "t") {
-        // timestamp
-        result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
-          result[key].push(dataArrObject[key][i]);
-      } else if (key === "o") {
-        // timestamp
-        result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
-          result[key].push(dataArrObject[key][i]);
-      } else if (key === "c") {
-        // timestamp
-        result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
-          result[key].push(dataArrObject[key][i + candle_width - 1]);
-      } else if (key === "h") {
-        // timestamp
-        result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
-          result[key].push(
-            Math.max(...dataArrObject[key].slice(i, i + candle_width)),
-          );
-      } else if (key === "l") {
-        // timestamp
-        result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
-          result[key].push(
-            Math.min(...dataArrObject[key].slice(i, i + candle_width)),
-          );
-      } else if (key === "v") {
-        // timestamp
-        result[key] = [];
-        for (let i = 0; i < dataArrObject[key].length; i += candle_width)
-          result[key].push(
-            dataArrObject[key]
-              .slice(i, i + candle_width)
-              .reduce((total, num) => total + num, 0),
-          );
-      }
-    });
-    return result;
-  }
-}
-
+// function normalizeCandleWidth(dataArrObject, candle_width) {
+//   const result = {};
+//   if (
+//     !dataArrObject.s ||
+//     !dataArrObject.t ||
+//     !dataArrObject.o ||
+//     !dataArrObject.c ||
+//     !dataArrObject.h ||
+//     !dataArrObject.l ||
+//     !dataArrObject.v
+//   )
+//     throw new Error("faulty historical data");
+//   else {
+//     ["s", "t", "o", "h", "l", "c", "v"].forEach((key) => {
+//       if (key === "s") result[key] = dataArrObject[key];
+//       else if (key === "t") {
+//         // timestamp
+//         result[key] = [];
+//         for (let i = 0; i < dataArrObject[key].length; i += candle_width)
+//           result[key].push(dataArrObject[key][i]);
+//       } else if (key === "o") {
+//         // timestamp
+//         result[key] = [];
+//         for (let i = 0; i < dataArrObject[key].length; i += candle_width)
+//           result[key].push(dataArrObject[key][i]);
+//       } else if (key === "c") {
+//         // timestamp
+//         result[key] = [];
+//         for (let i = 0; i < dataArrObject[key].length; i += candle_width)
+//           result[key].push(dataArrObject[key][i + candle_width - 1]);
+//       } else if (key === "h") {
+//         // timestamp
+//         result[key] = [];
+//         for (let i = 0; i < dataArrObject[key].length; i += candle_width)
+//           result[key].push(
+//             Math.max(...dataArrObject[key].slice(i, i + candle_width)),
+//           );
+//       } else if (key === "l") {
+//         // timestamp
+//         result[key] = [];
+//         for (let i = 0; i < dataArrObject[key].length; i += candle_width)
+//           result[key].push(
+//             Math.min(...dataArrObject[key].slice(i, i + candle_width)),
+//           );
+//       } else if (key === "v") {
+//         // timestamp
+//         result[key] = [];
+//         for (let i = 0; i < dataArrObject[key].length; i += candle_width)
+//           result[key].push(
+//             dataArrObject[key]
+//               .slice(i, i + candle_width)
+//               .reduce((total, num) => total + num, 0),
+//           );
+//       }
+//     });
+//     return result;
+//   }
+// }
+//
 function getUnderEMA(
   candle_width = undefined,
   candle_unit = undefined,
@@ -452,108 +418,9 @@ function getUnderEMA(
   });
 }
 
-async function getNSECookie() {
-  try {
-    if (
-      NSE_COOKIE_CACHE.cookie &&
-      Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time < 6000
-    ) {
-      console.log(
-        "Using cached NSE cookie" +
-          " cookie is " +
-          (Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time) +
-          " sec old",
-      );
-      return NSE_COOKIE_CACHE.cookie;
-    }
-
-    //[NSE-FETCH]
-    let result = await axios.get(
-      // "https://www.nseindia.com/get-quotes/derivatives?symbol=DABUR",
-      "https://www.nseindia.com/get-quotes/derivatives",
-      {
-        httpsAgent: agent,
-        headers: {
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-          "Accept-Language": "en-GB,en;q=0.6",
-          Connection: "keep-alive",
-          "Sec-Fetch-Dest": "document",
-          "Sec-Fetch-Mode": "navigate",
-          "Sec-Fetch-Site": "none",
-          "Sec-Fetch-User": "?1",
-          "Sec-GPC": "1",
-          "Upgrade-Insecure-Requests": "1",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
-          // "User-Agent":
-          //   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
-          "sec-ch-ua":
-            '"Brave";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": '"macOS"',
-        },
-      },
-    );
-    NSE_COOKIE_CACHE = {
-      time: Math.floor(Date.now() / 1000),
-      cookie: result?.headers?.["set-cookie"].join("; "),
-    };
-    console.log("Fetched new NSE cookie at:", new Date().toLocaleString());
-    return NSE_COOKIE_CACHE.cookie;
-  } catch (error) {
-    throw new Error("failed to fetch nse cookie");
-  }
-}
-
-async function getDerivatives(symbol) {
-  try {
-    const cookie = await getNSECookie();
-    //[NSE-FETCH]
-    const allDerivatives = await axios.get(
-      `https://www.nseindia.com/api/quote-derivative?symbol=${symbol}`,
-      {
-        httpsAgent: agent,
-        headers: {
-          Cookie: cookie,
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
-        },
-      },
-    );
-    return allDerivatives?.data?.stocks;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function getNSESymbolHistory(symbol) {
-  try {
-    if (!symbol || symbol === "")
-      throw new Error("Invalid symbol, please provide: symbol, it is NSEID");
-    const cookie = await getNSECookie();
-    //[NSE-FETCH]
-    const result = await axios.get(
-      "https://www.nseindia.com/api/NextApi/apiClient/historicalGraph?" +
-        "functionName=getIndexChart" +
-        `&index=${symbol}` + // NIFTY%20SMLCAP%20100
-        "&flag=15Y",
-      {
-        httpsAgent: agent,
-        headers: {
-          Cookie: cookie,
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
-        },
-      },
-    );
-    return result?.data?.data;
-  } catch (error) {
-    if (error?.message && error.message.includes("Please provide")) throw error;
-    return null;
-  }
-}
-
 async function getFutureDerivatives(symbol) {
   try {
-    const derivatives = await getDerivatives(symbol);
+    const derivatives = await getNSEDerivatives(symbol);
     return derivatives
       .filter((x) => x.metadata.instrumentType === "Stock Futures")
       .map((x) => ({
@@ -628,6 +495,62 @@ async function getAllFutureCompareToCurrent(cap, comparator = "less") {
   return results.flat();
 }
 
+async function getEma20_50_100_under_200(cap, candle_width_in_days = 5) {
+  if (candle_width_in_days && typeof candle_width_in_days !== "number")
+    throw new Error("Invalid candle_width_in_days, should be a number");
+  let stocksByCap = await getLargeCaps(cap);
+  // let ema20_50_100_under_200 = [];
+  console.log(
+    `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
+  );
+  const limit = pLimit(20); // Limit concurrency to 20 (you can adjust this number)
+  const tasks = stocksByCap.map((stock) =>
+    limit(async () => {
+      try {
+        if (stock.NSEID === "ATHERENERG") console.log("here");
+        let history = await getNSEStockHistory(
+          stock.NSEID || stock.BSEID,
+          "EQ",
+        );
+        history = normalizeCandleWidth(history, candle_width_in_days);
+        history = addEmaToHistory(history, 200);
+        history = addEmaToHistory(history, 100);
+        history = addEmaToHistory(history, 50);
+        history = addEmaToHistory(history, 20);
+        const n = history.c.length - 1; // last
+        if (
+          history[`ema20`][n] <= history[`ema200`][n] * 1.05 &&
+          history[`ema50`][n] <= history[`ema200`][n] * 1.05 &&
+          history[`ema100`][n] <= history[`ema200`][n] * 1.05
+        ) {
+          console.log(
+            `Stock ${stock.Name} (${stock.NSEID || stock.BSEID}) meets EMA conditions.`,
+          );
+          return {
+            time: format(new Date(history.t[n] * 1000), "dd-MMM-yyyy"),
+            ema20: history[`ema20`][n].toFixed(3),
+            ema50: history[`ema50`][n].toFixed(3),
+            ema100: history[`ema100`][n].toFixed(3),
+            ema200: history[`ema200`][n].toFixed(3),
+            ...stock,
+          };
+        }
+      } catch (error) {
+        console.error(
+          `Error fetching history for ${stock.Name} (${
+            stock.NSEID || stock.BSEID
+          }):`,
+          error.message,
+        );
+      }
+      return null;
+    }),
+  );
+
+  const results = await Promise.all(tasks);
+  return results.filter((result) => result !== null);
+}
+
 module.exports = {
   loadModules,
   getSymbolCurrInfo,
@@ -637,35 +560,5 @@ module.exports = {
   getStockHistory,
   getUnderEMA,
   getAllFutureCompareToCurrent,
-  getNSESymbolHistory,
+  getEma20_50_100_under_200,
 };
-
-// NSE data sample
-// async function getFutureDerivatives(cap) {
-//   try {
-//     const symbol = "DABUR";
-//     const cookie = await getNSECookie();
-//     [NSE-FETCH]
-//     const allDerivatives = await axios.get(
-//       `https://www.nseindia.com/api/quote-derivative?symbol=${symbol}`,
-//       {
-//         httpsAgent: agent,
-//         headers: {
-//           Cookie:
-//           "_abck=BD7D2167C01F6635AAE8527977CB2DF8~-1~YAAQV/EBF25dIqeZAQAAGlJdvw6kyNNj185bOy1BAyPO8pLYOs5EQ/SUYxeKvI778If8WyWZY/+2Q2D0fizjLHKXgcYS7Ri9m7yV2JHrXDMy7ivTrmYIQtf9GMfP+0gWthIEmoItre4B/KjXCi+33LkKZhV/R4SQav00OJxm+EqK9bdUjIklgUy/gCGbhwY3tyJ5+kKGkwViRIU79UcgTEqjftMeylCW/gnHTNQJC8UE0Gdjhbzzok+fcwiDWK9TDMFl0Xgsjb0yy1O2iAChvvhG+MahPnVb6omARCM49TbwZEz1l/pIzy/ZJJ2gZpkPQWbwAHEVaZtAN4ZPXikmCHUsrcu7nr1WBCDw8yjJHoDdBft8287mPNSR6WkZQGnm44ig7j+2wV5akTp1WdDvE2jfO3nHGOl0wm+RIww4HTKKbEScZ95REBqdPr7pRpZ7xdcx2V9jLz0Dag==~-1~-1~-1~-1~-1;"+
-//               "ak_bmsc=9E36A83A8A302E16F061D84BD4466F9C~000000000000000000000000000000~YAAQDW/ZF0XZlH+ZAQAAC0HSvx1QgBr2v0PQ/Ii0bRhtIXD1LlwjGKJgAEK6szWTqYQod1pHlPqzIkFqmx2iBXQ3Qniyt3tjf7AC9u6vEoDbDbO9Ji2HEbInv3Q5EfTwBb4r1CvO/nICU5Y9jKwjDx3Qn8Gn80cZHxC5iYcrQ3y/xIi/kGFnCYUpeSMfDkiqKHGHzd76S5CZZxRuSnO2E3blLcgTAjKfmTqS9E10hzah4P5TfVx3w2H9KE/qv0eBK9tgjHjDvytBJZYYPsdJGXmreeJViV1WB2okLDa79XRM0cEPH7U9j8dTqxIlc1nGBa5U7vsxgbtSGPUSPfZQfZ4q+gQ/NJ8zkkzUrlslF+2Oe/N8;"+
-//               "bm_mi=1F9D9CFC02DADB5BD896D92877BC323F~YAAQUEo5F1N6UKyZAQAA5ajpvx2MG6mJRipDCEMAAJtgfeaFnKWpyCDZ+Wq8D5HKhsddsBCK0fiCciCPjhrQbivoG8K9Vcvk+rY5hSMtdl8eeeodX9zo156Xt/3AHgHO5PvZGv6Kdlu94w8Wjig68HWTeR6WOxgdpGD68p8S2nsPKon+JyVG0zMG8TqOPa9pHLX8/Eq9SQc/tmXI5zfk3CI5wpivkt4u0wMzvp1Vhi9SBlGyB1eYFSILdUkOZa31rc9J0Z+Na8OHCMeog7WUQKNVlZJPnMKInJmLNnH6rTK4lsdiD/0RHzStzoPgoAY6N7z4kaVRfxC04T1aKWc5FIlbsyW5~1;"+
-//               "bm_sv=9C0E6CB9A07FB1595A81CFB00B1FDA8C~YAAQUEo5F1R6UKyZAQAA5ajpvx10FdjHmIBNhozFsBhcgbXKSFCwFyxLkphKDTF7ecCgiiCIxeQZr9WcOaSNaUa36eTzRzyml7hbr5rWIc3TQJ0NnFBml8V4wG8sPZh0TJ1HKdIJm8X5Nk/3b6hZRj1quiNkesWy38gr/pnCyIaWtn6a3Npuu4rAqsM+zEmEa1fM+22F1aJ5sAa/ERGfK9tMfZJisR9Raq0D4M6h8mCPXxSk4Y6U9utZ15jXDLYYaVE=~1;"+
-//               "bm_sz=B055FC791E6D4DBCCBA33B388FC49CF0~YAAQUEo5F1V6UKyZAQAA5ajpvx2aIC9hPHTJHUCZv9SI3mtOEuEP9pMInFG24conC8FyYPZfvldBNI6cPt7J30XtJ60huTrBdk2gSaanATNGXkVIWzWwtkmNnz2BCH9DmgtJ8G6/d6wpFza8hZbrRAgUVmxrXGaS8A5LjZoLcMqSot+80/7XZEiErg1CRZpCOE2a7+uy3CeuR0wnWY3hAviWVdRpBxrl1y/E57OftOaYbNL/wOAv7uxReD0E7lmmeeu4tF0diZuL2INeGKtRnz0M9aTMfkbJR7yEWpUyPmc4SoDHKpuL5DWEZCtnl/zFgXP1XcV4h6N+SGILiKRm9LzsDbu1NHPcLFfUXTHzcjSsya8icZ6V3F70uoJ0ux8fKc6+0pk50zEiO9zamziAk5qeHmdiBVBNylqLb8loDmo=~4601654~3490614;"+
-//               "nseappid=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTc1OTg2MTM4NSwiZXhwIjoxNzU5ODY4NTg1fQ.0uo0jq9pfYAOm3x8x-9tF2Ix-xvJpPqjg4RDAL6DJrs;"+
-//               "nsit=mX-4jwJrGHCnAgheyGMjwb7f",
-//           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
-//
-//         },
-//       },
-//     );
-//     return allDerivatives?.data;
-//   } catch (error) {
-//     throw error;
-//   }
-// }
