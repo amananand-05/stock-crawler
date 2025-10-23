@@ -8,6 +8,7 @@ const {
   getNSEDerivatives,
   getNSEStockHistory,
   getNSEStockInfo,
+  getNSEStockTradeInfo,
 } = require("./nse");
 
 const { getLargeCaps } = require("./staticData");
@@ -661,7 +662,8 @@ async function getGapUpAndGapDown(cap, threshold_percent = 3) {
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
-        let stockInfo = await getNSEStockInfo(stock.NSEID || stock.BSEID);
+        let stockInfo = await getNSEStockInfo(stock.NSEID);
+        // let stockTradeInfo = await getNSEStockTradeInfo(stock.NSEID);
         let { priceInfo } = stockInfo;
         const { previousClose, open } = priceInfo;
         if (
