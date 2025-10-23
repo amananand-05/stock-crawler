@@ -1,10 +1,14 @@
-const { getNSEStockHistory } = require("./nse");
 const { addEmaToHistory } = require("./common");
 const { format } = require("date-fns");
 
 const fs = require("fs/promises");
 const path = require("path");
-const { getNSECookie, getNSEDerivatives } = require("./nse");
+const {
+  getNSECookie,
+  getNSEDerivatives,
+  getNSEStockHistory,
+  getNSEStockInfo,
+} = require("./nse");
 
 const { getLargeCaps } = require("./staticData");
 const {
@@ -645,6 +649,51 @@ async function rsiCompTo(
   return results.filter((result) => result !== null);
 }
 
+async function getGapUpAndGapDown(cap, threshold_percent = 3) {
+  if (!threshold_percent || typeof threshold_percent !== "number")
+    throw new Error("Threshold %, should be a number");
+  let stocksByCap = await getLargeCaps(cap);
+  // let ema20_50_100_under_200 = [];
+  console.log(
+    `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
+  );
+  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+  const tasks = stocksByCap.map((stock) =>
+    limit(async () => {
+      try {
+        let stockInfo = await getNSEStockInfo(stock.NSEID || stock.BSEID);
+        let { priceInfo } = stockInfo;
+        const { previousClose, open } = priceInfo;
+        if (
+          Math.abs((open - previousClose) * (100 / previousClose)) >=
+          threshold_percent
+        )
+          return {
+            "Company Name": stockInfo.info.companyName,
+            Open: open,
+            ["Previous Close"]: previousClose,
+            ["change percent%"]: (
+              (open - previousClose) *
+              (100 / previousClose)
+            ).toFixed(2),
+            ["Market Capital"]: stock["Market Capital"],
+          };
+      } catch (error) {
+        console.error(
+          `Error fetching history for ${stock.Name} (${
+            stock.NSEID || stock.BSEID
+          }):`,
+          error.message,
+        );
+      }
+      return null;
+    }),
+  );
+
+  const results = await Promise.all(tasks);
+  return results.filter((result) => result !== null);
+}
+
 module.exports = {
   loadModules,
   getSymbolCurrInfo,
@@ -656,4 +705,5 @@ module.exports = {
   getAllFutureCompareToCurrent,
   getEma20_50_100_under_200,
   rsiCompTo,
+  getGapUpAndGapDown,
 };

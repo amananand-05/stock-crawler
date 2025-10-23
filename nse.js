@@ -132,8 +132,37 @@ async function getNSEStockHistory(symbol = undefined, type = "EQ") {
   }
 }
 
+/*
+get nse history for the symbol, and type
+ */
+async function getNSEStockInfo(symbol = undefined) {
+  try {
+    if (!symbol) throw new Error("Please provide a valid symbol");
+    // chartPeriod can be "I" (intraday), "D" (daily), "W" (weekly), "M" (monthly)
+    const cookie = await getNSECookie();
+    const response = await axios.get(
+      `https://www.nseindia.com/api/quote-equity?symbol=${symbol}`,
+      {
+        httpsAgent: agent,
+        headers: {
+          Cookie: cookie,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
+        },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    if (error?.message && error.message.includes("Please provide")) {
+      throw error;
+    }
+    console.error("Error fetching NSE stock history:", error.message);
+    return null;
+  }
+}
+
 module.exports = {
   getNSECookie,
   getNSEDerivatives,
   getNSEStockHistory,
+  getNSEStockInfo,
 };

@@ -11,6 +11,7 @@ const {
   getAllFutureCompareToCurrent,
   getEma20_50_100_under_200,
   rsiCompTo,
+  getGapUpAndGapDown,
 } = require("./helpers");
 
 const {
@@ -90,11 +91,13 @@ app.get("/", (req, res) => {
         <form id="apiForm">
           <label for="endpoint">Select Endpoint</label>
           <select id="endpoint" name="endpoint">
+           
             <option value="/api/future-more-than-current">1. Future More Than Current</option>
             <option value="/api/future-less-than-current">2. Future Less Than Current</option>
             <option value="/api/get-ema-20-50-100-under-200">3. EMA (20 50 100) under 200</option>
             <option value="/api/rsi-more-than">4. RSI More Than</option>
             <option value="/api/rsi-less-than">5. RSI Less Than</option>
+            <option value="/api/gap-up-gap-down">6. Gap-Up Gap-Down</option>
             <!-- Uncomment others as needed
             <option value="/api/stock">/api/stock</option>
             <option value="/api/large-caps">/api/large-caps</option>
@@ -135,6 +138,10 @@ app.get("/", (req, res) => {
               { label: "(Optional) Candle Width in Days", name: "candle_width_in_days", placeholder: "default value 5" },
               { label: "(Optional) RSI", name: "rsi", placeholder: "default value 9" },
               { label: "(Optional) Compare value", name: "compare_value", placeholder: "default value 70" }
+            ],
+            "/api/gap-up-gap-down": [
+              { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" },
+              { label: "(Optional) Threshold %", name: "threshold_percent", placeholder: "default value 3" },
             ],
             "/api/stock": [
               { label: "Stock Symbol", name: "symbol", placeholder: "e.g. INFY" }
@@ -303,6 +310,20 @@ app.get("/api/rsi-less-than", async (req, res, next) => {
       parseInt(req?.query?.compare_value ?? 20),
       "below",
     );
+    addSerial(result);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/gap-up-gap-down", async (req, res, next) => {
+  try {
+    let result = await getGapUpAndGapDown(
+      parseInt(req?.query?.cap),
+      parseFloat(req?.query?.threshold_percent ?? 3),
+    );
+    result = result.sort((a, b) => b["change percent%"] - a["change percent%"]);
     addSerial(result);
     res.status(200).json(result);
   } catch (error) {
