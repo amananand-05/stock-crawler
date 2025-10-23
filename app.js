@@ -12,7 +12,11 @@ const {
   getEma20_50_100_under_200,
 } = require("./helpers");
 
-const { normalizeCandleWidth, addEmaToHistory } = require("./common");
+const {
+  normalizeCandleWidth,
+  addEmaToHistory,
+  addSerial,
+} = require("./common");
 
 const { getNSEStockHistory } = require("./nse");
 
@@ -240,6 +244,7 @@ app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
       parseInt(req?.query?.candle_width_in_days ?? 5), // for a week
       parseInt(req?.query?.from_ema_200_plus_x_percent ?? 0), // for a week
     );
+    addSerial(result);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -248,13 +253,13 @@ app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {
 
 app.get("/api/future-less-than-current", async (req, res, next) => {
   try {
-    const result = await getAllFutureCompareToCurrent(
+    let result = await getAllFutureCompareToCurrent(
       parseInt(req.query.cap),
       "less",
     );
-    res
-      .status(200)
-      .json(result.sort((a, b) => a["change percent%"] - b["change percent%"]));
+    result = result.sort((a, b) => a["change percent%"] - b["change percent%"]);
+    addSerial(result);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -262,13 +267,13 @@ app.get("/api/future-less-than-current", async (req, res, next) => {
 
 app.get("/api/future-more-than-current", async (req, res, next) => {
   try {
-    const result = await getAllFutureCompareToCurrent(
+    let result = await getAllFutureCompareToCurrent(
       parseInt(req.query.cap),
       "more",
     );
-    res
-      .status(200)
-      .json(result.sort((a, b) => b["change percent%"] - a["change percent%"]));
+    result = result.sort((a, b) => b["change percent%"] - a["change percent%"]);
+    addSerial(result);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

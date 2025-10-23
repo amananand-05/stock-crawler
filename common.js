@@ -93,9 +93,18 @@ function addEmaToHistory(normalizedData, emaPeriod) {
   }
 }
 
+function addSerial(arr) {
+  let count = 1;
+  arr.forEach((x) => {
+    x["no."] = count;
+    count++;
+  });
+}
+
 module.exports = {
   agent,
   // getEMA,
   addEmaToHistory,
   normalizeCandleWidth,
+  addSerial,
 };
