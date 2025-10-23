@@ -7,7 +7,13 @@ const path = require("path");
 const { getNSECookie, getNSEDerivatives } = require("./nse");
 
 const { getLargeCaps } = require("./staticData");
-const { agent, getEMA, normalizeCandleWidth } = require("./common");
+const {
+  agent,
+  getEMA,
+  normalizeCandleWidth,
+  calculateRSI,
+  calculateWMA,
+} = require("./common");
 
 let axios;
 let pLimit;
@@ -440,7 +446,7 @@ async function getAllFutureCompareToCurrent(cap, comparator = "less") {
   await getNSECookie();
 
   console.log(`Checking ${stocksByCap.length} large cap stocks for futures...`);
-  const limit = pLimit(20); // Limit concurrency to 20 (you can adjust this number)
+  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
@@ -567,6 +573,78 @@ async function getEma20_50_100_under_200(
   return results.filter((result) => result !== null);
 }
 
+async function rsiCompTo(
+  cap,
+  candle_width_in_days = 5,
+  rsi = undefined,
+  compare_value = 0,
+  operator = "above", // below
+) {
+  if (!candle_width_in_days || typeof candle_width_in_days !== "number")
+    throw new Error("Candle Width in Days, should be a number");
+  if (
+    (!compare_value && compare_value !== 0) ||
+    typeof compare_value !== "number"
+  )
+    throw new Error("Compare Value should be a number, like: 80 or 20 etc");
+  if (!["above", "below"].includes(operator))
+    throw new Error("Operator should be 'above' or 'below'");
+  let stocksByCap = await getLargeCaps(cap);
+  // let ema20_50_100_under_200 = [];
+  console.log(
+    `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
+  );
+  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+  const tasks = stocksByCap.map((stock) =>
+    limit(async () => {
+      try {
+        let history = await getNSEStockHistory(
+          stock.NSEID || stock.BSEID,
+          "EQ",
+        );
+        // [pretty time]
+        // history.t = history.t.map(x=>
+        //   format(new Date(x * 1000), "dd-MMM-yyyy")
+        // );
+        history = normalizeCandleWidth(history, candle_width_in_days);
+        history[`rsi${rsi}`] = calculateRSI(history.c, rsi);
+        // history[`wma21` ] = calculateWMA(history.c, 21); // calculateWMA is wrong implementation
+        if (!history[`rsi${rsi}`])
+          throw new Error(`no rsi${rsi} for ` + stock.NSEID);
+        // if (!history[`wma21`]) throw new Error(`no wma21 for ` + stock.NSEID);
+        const n = history.c.length - 1; // last
+        if (operator === "above" && history[`rsi${rsi}`][n] >= compare_value)
+          return {
+            time: format(new Date(history.t[n] * 1000), "dd-MMM-yyyy"),
+            [`rsi${rsi}`]: history[`rsi${rsi}`][n],
+            compare_value: compare_value,
+            ...stock,
+          };
+        else if (
+          operator === "below" &&
+          history[`rsi${rsi}`][n] <= compare_value
+        )
+          return {
+            time: format(new Date(history.t[n] * 1000), "dd-MMM-yyyy"),
+            [`rsi${rsi}`]: history[`rsi${rsi}`][n],
+            ...stock,
+          };
+      } catch (error) {
+        console.error(
+          `Error fetching history for ${stock.Name} (${
+            stock.NSEID || stock.BSEID
+          }):`,
+          error.message,
+        );
+      }
+      return null;
+    }),
+  );
+
+  const results = await Promise.all(tasks);
+  return results.filter((result) => result !== null);
+}
+
 module.exports = {
   loadModules,
   getSymbolCurrInfo,
@@ -577,4 +655,5 @@ module.exports = {
   getUnderEMA,
   getAllFutureCompareToCurrent,
   getEma20_50_100_under_200,
+  rsiCompTo,
 };

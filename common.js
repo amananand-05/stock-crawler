@@ -101,10 +101,69 @@ function addSerial(arr) {
   });
 }
 
+function calculateRSI(values, period = 9) {
+  const rsi = new Array(values.length).fill(null);
+  let gains = 0;
+  let losses = 0;
+
+  // Calculate initial averages
+  for (let i = 1; i <= period; i++) {
+    const diff = values[i] - values[i - 1];
+    if (diff > 0) gains += diff;
+    else losses -= diff;
+  }
+
+  gains /= period;
+  losses /= period;
+
+  rsi[period] = 100 - 100 / (1 + gains / losses);
+
+  // Continue RSI calculation
+  for (let i = period + 1; i < values.length; i++) {
+    const diff = values[i] - values[i - 1];
+    const gain = Math.max(diff, 0);
+    const loss = Math.max(-diff, 0);
+
+    gains = (gains * (period - 1) + gain) / period;
+    losses = (losses * (period - 1) + loss) / period;
+
+    const rs = losses === 0 ? 100 : gains / losses;
+    rsi[i] = 100 - 100 / (1 + rs);
+  }
+
+  return rsi;
+}
+
+function calculateWMA(values, period = 21) {
+  const wma = new Array(values.length).fill(null);
+  const weightSum = (period * (period + 1)) / 2;
+
+  for (let i = period - 1; i < values.length; i++) {
+    let weightedSum = 0;
+    for (let j = 0; j < period; j++) {
+      weightedSum += values[i - j] * (period - j);
+    }
+    wma[i] = weightedSum / weightSum;
+  }
+
+  return normalizeTo100(wma);
+}
+function normalizeTo100(values) {
+  const valid = values.filter((v) => v != null);
+  const min = Math.min(...valid);
+  const max = Math.max(...valid);
+
+  return values.map((v) =>
+    v == null ? null : ((v - min) / (max - min)) * 100,
+  );
+}
+
 module.exports = {
   agent,
   // getEMA,
   addEmaToHistory,
   normalizeCandleWidth,
   addSerial,
+  calculateRSI,
+  calculateWMA, // wrong function do not use
 };
