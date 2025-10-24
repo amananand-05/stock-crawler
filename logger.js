@@ -10,4 +10,7 @@ function dumpObj(content, file = "obj_log") {
 function loadObj(file = "obj_log") {
   return JSON.parse(fs.readFileSync(file, "utf-8"));
 }
-module.exports = { logg, dumpObj, loadObj };
+function clearLogObj(file = "obj_log") {
+  fs.writeFileSync(file, JSON.stringify("", null, 2));
+}
+module.exports = { logg, dumpObj, loadObj, clearLogObj };

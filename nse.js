@@ -1,14 +1,19 @@
 const axios = require("axios");
 const { agent, normalizeCandleWidth, getEMA } = require("./common");
-let NSE_COOKIE_CACHE = { time: 0, cookie: "" };
-const { loadObj, dumpObj } = require("./logger");
+let NSE_COOKIE_CACHE = { time: undefined, cookie: undefined, failedCount: 0 };
+const { loadObj, dumpObj, clearLogObj } = require("./logger");
+let retry = 0;
+
+function cookieMissCounter() {
+  NSE_COOKIE_CACHE.failedCount = NSE_COOKIE_CACHE.failedCount + 1;
+  if (NSE_COOKIE_CACHE.failedCount > 200) clearLogObj();
+}
 
 async function getNSECookie() {
-  let retry = 0;
   try {
     if (
       NSE_COOKIE_CACHE.cookie &&
-      Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time < 6000
+      Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time < 3400
     ) {
       // console.log(
       //   "Using cached NSE cookie" +
@@ -17,20 +22,20 @@ async function getNSECookie() {
       //     " sec old",
       // );
       return NSE_COOKIE_CACHE.cookie;
-    } else {
-      try {
-        NSE_COOKIE_CACHE = loadObj();
-        if (
-          Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time < 3400 &&
-          false
-        ) {
-          console.log("LOGGED COOKIE USED");
-          return NSE_COOKIE_CACHE.cookie;
-        }
-      } catch (e) {
-        console.log("LOGGED COOKIE CACHE not found");
-      }
     }
+    // else {
+    //   try {
+    //     NSE_COOKIE_CACHE = loadObj();
+    //     if (NSE_COOKIE_CACHE.cookie &&
+    //       Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time < 3400
+    //     ) {
+    //       console.log("LOGGED COOKIE USED");
+    //       return NSE_COOKIE_CACHE.cookie;
+    //     }
+    //   } catch (e) {
+    //     console.log("LOGGED COOKIE CACHE not found");
+    //   }
+    // }
     //[NSE-FETCH]
     let result = await axios.get(
       "https://www.nseindia.com/get-quotes/derivatives",
@@ -60,6 +65,7 @@ async function getNSECookie() {
     NSE_COOKIE_CACHE = {
       time: Math.floor(Date.now() / 1000),
       cookie: result?.headers?.["set-cookie"].join("; "),
+      failedCount: 0,
     };
     dumpObj(NSE_COOKIE_CACHE);
     console.warn("Fetched new NSE cookie at:", new Date().toLocaleString());
@@ -70,6 +76,7 @@ async function getNSECookie() {
       console.warn("Retrying to fetch NSE cookie, attempt:", retry);
       return await getNSECookie();
     }
+    clearLogObj();
     throw new Error("failed to fetch nse cookie");
   }
 }
@@ -91,6 +98,7 @@ async function getNSEDerivatives(symbol) {
     );
     return allDerivatives?.data?.stocks;
   } catch (error) {
+    cookieMissCounter();
     throw error;
   }
 }
@@ -154,6 +162,7 @@ async function getNSEStockHistory(symbol = undefined, type = "EQ") {
       throw error;
     }
     console.error("Error fetching NSE stock history:", error.message);
+    cookieMissCounter();
     return null;
   }
 }
@@ -183,6 +192,7 @@ async function getNSEStockInfo(symbol = undefined) {
       throw error;
     }
     console.error("Error fetching NSE stock history:", error.message);
+    cookieMissCounter();
     return null;
   }
 }
@@ -208,6 +218,7 @@ async function getNSEStockTradeInfo(symbol = undefined) {
       throw error;
     }
     console.error("Error fetching NSE stock history:", error.message);
+    cookieMissCounter();
     return null;
   }
 }

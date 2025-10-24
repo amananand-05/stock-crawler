@@ -31,10 +31,6 @@ const port = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
-app.use(async (req, res, next) => {
-  await getNSECookie();
-  next();
-});
 
 // Define routes
 // =========================== PRODUCTION ===========================
@@ -266,6 +262,12 @@ app.get("/", (req, res) => {
       </body>
     </html>
   `);
+});
+
+app.use(async (req, res, next) => {
+  await getNSECookie();
+  printBigText("...................", 40);
+  next();
 });
 
 app.get("/api/get-ema-20-50-100-under-200", async (req, res, next) => {

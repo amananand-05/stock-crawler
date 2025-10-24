@@ -10,7 +10,7 @@ const {
   getNSEStockTradeInfo,
 } = require("./nse");
 
-const pLimitDefault = 50;
+const pLimitDefault = 100;
 const { dumpObj, loadObj } = require("./logger");
 
 const { getLargeCaps } = require("./staticData");
