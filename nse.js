@@ -19,7 +19,6 @@ async function getNSECookie() {
 
     //[NSE-FETCH]
     let result = await axios.get(
-      // "https://www.nseindia.com/get-quotes/derivatives?symbol=DABUR",
       "https://www.nseindia.com/get-quotes/derivatives",
       {
         httpsAgent: agent,
@@ -57,8 +56,8 @@ async function getNSECookie() {
 
 async function getNSEDerivatives(symbol) {
   try {
-    const cookie = await getNSECookie();
     //[NSE-FETCH]
+    const cookie = await getNSECookie();
     const allDerivatives = await axios.get(
       `https://www.nseindia.com/api/quote-derivative?symbol=${symbol}`,
       {

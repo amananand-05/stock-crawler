@@ -21,7 +21,7 @@ const {
   addSerial,
 } = require("./common");
 
-const { getNSEStockHistory } = require("./nse");
+const { getNSECookie } = require("./nse");
 
 const { backTrackStock } = require("./backTracker");
 
@@ -30,6 +30,10 @@ const port = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use(async (req, res, next) => {
+  await getNSECookie();
+  next();
+});
 
 // Define routes
 // =========================== PRODUCTION ===========================
@@ -99,6 +103,7 @@ app.get("/", (req, res) => {
             <option value="/api/rsi-more-than">4. RSI More Than</option>
             <option value="/api/rsi-less-than">5. RSI Less Than</option>
             <option value="/api/gap-up-gap-down">6. Gap-Up Gap-Down</option>
+            <option value="/api/bt">x. Back Track</option>
             <!-- Uncomment others as needed
             <option value="/api/bt">x. Back Track</option>
             <option value="/api/stock">/api/stock</option>
@@ -326,7 +331,9 @@ app.get("/api/gap-up-gap-down", async (req, res, next) => {
       parseInt(req?.query?.cap),
       parseFloat(req?.query?.threshold_percent ?? 3),
     );
-    result = result.sort((a, b) => b["change percent%"] - a["change percent%"]);
+    result = result.sort(
+      (a, b) => b["open change percent%"] - a["open change percent%"],
+    );
     addSerial(result);
     res.status(200).json(result);
   } catch (error) {

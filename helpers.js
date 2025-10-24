@@ -4,7 +4,6 @@ const { format, getMonth } = require("date-fns");
 const fs = require("fs/promises");
 const path = require("path");
 const {
-  getNSECookie,
   getNSEDerivatives,
   getNSEStockHistory,
   getNSEStockInfo,
@@ -449,8 +448,6 @@ async function getFutureDerivatives(symbol) {
 
 async function getAllFutureCompareToCurrent(cap, comparator = "less") {
   let stocksByCap = await getLargeCaps(cap);
-
-  await getNSECookie();
 
   console.log(`Checking ${stocksByCap.length} large cap stocks for futures...`);
   const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
