@@ -664,17 +664,22 @@ async function getGapUpAndGapDown(cap, threshold_percent = 3) {
         let stockInfo = await getNSEStockInfo(stock.NSEID);
         // let stockTradeInfo = await getNSEStockTradeInfo(stock.NSEID);
         let { priceInfo } = stockInfo;
-        const { previousClose, open } = priceInfo;
+        const { previousClose, open, lastPrice } = priceInfo;
         if (
           Math.abs((open - previousClose) * (100 / previousClose)) >=
           threshold_percent
         )
           return {
             "Company Name": stockInfo.info.companyName,
-            Open: open,
             ["Previous Close"]: previousClose,
-            ["change percent%"]: (
+            Open: open,
+            ["open change percent%"]: (
               (open - previousClose) *
+              (100 / previousClose)
+            ).toFixed(2),
+            lastPrice,
+            ["net change percent%"]: (
+              (lastPrice - previousClose) *
               (100 / previousClose)
             ).toFixed(2),
             ["Market Capital"]: stock["Market Capital"],
