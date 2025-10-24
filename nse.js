@@ -8,12 +8,12 @@ async function getNSECookie() {
       NSE_COOKIE_CACHE.cookie &&
       Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time < 6000
     ) {
-      console.log(
-        "Using cached NSE cookie" +
-          " cookie is " +
-          (Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time) +
-          " sec old",
-      );
+      // console.log(
+      //   "Using cached NSE cookie" +
+      //     " cookie is " +
+      //     (Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time) +
+      //     " sec old",
+      // );
       return NSE_COOKIE_CACHE.cookie;
     }
 
@@ -47,7 +47,7 @@ async function getNSECookie() {
       time: Math.floor(Date.now() / 1000),
       cookie: result?.headers?.["set-cookie"].join("; "),
     };
-    console.log("Fetched new NSE cookie at:", new Date().toLocaleString());
+    console.warn("Fetched new NSE cookie at:", new Date().toLocaleString());
     return NSE_COOKIE_CACHE.cookie;
   } catch (error) {
     throw new Error("failed to fetch nse cookie");
@@ -56,6 +56,7 @@ async function getNSECookie() {
 
 async function getNSEDerivatives(symbol) {
   try {
+    console.log("Fetching NSE Derivatives for symbol:", symbol);
     //[NSE-FETCH]
     const cookie = await getNSECookie();
     const allDerivatives = await axios.get(
@@ -79,6 +80,7 @@ get nse history for the symbol, and type
  */
 async function getNSEStockHistory(symbol = undefined, type = "EQ") {
   try {
+    console.log("Fetching NSE Stock History for symbol:", symbol, "type:", type);
     if (!symbol) throw new Error("Please provide a valid symbol");
     if (!["EQ"].includes(type))
       throw new Error("Please provide a valid type from [EQ]");
@@ -136,6 +138,7 @@ get nse history for the symbol, and type
  */
 async function getNSEStockInfo(symbol = undefined) {
   try {
+    console.log("Fetching NSE Stock Info for symbol:", symbol);
     if (!symbol) throw new Error("Please provide a valid symbol");
     // chartPeriod can be "I" (intraday), "D" (daily), "W" (weekly), "M" (monthly)
     const cookie = await getNSECookie();
@@ -160,6 +163,7 @@ async function getNSEStockInfo(symbol = undefined) {
 }
 async function getNSEStockTradeInfo(symbol = undefined) {
   try {
+    console.log("Fetching NSE Stock Trade Info for symbol:", symbol);
     if (!symbol) throw new Error("Please provide a valid symbol");
     // chartPeriod can be "I" (intraday), "D" (daily), "W" (weekly), "M" (monthly)
     const cookie = await getNSECookie();
