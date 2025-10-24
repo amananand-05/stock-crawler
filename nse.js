@@ -80,7 +80,12 @@ get nse history for the symbol, and type
  */
 async function getNSEStockHistory(symbol = undefined, type = "EQ") {
   try {
-    console.log("Fetching NSE Stock History for symbol:", symbol, "type:", type);
+    console.log(
+      "Fetching NSE Stock History for symbol:",
+      symbol,
+      "type:",
+      type,
+    );
     if (!symbol) throw new Error("Please provide a valid symbol");
     if (!["EQ"].includes(type))
       throw new Error("Please provide a valid type from [EQ]");
