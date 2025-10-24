@@ -1,8 +1,10 @@
 const axios = require("axios");
 const { agent, normalizeCandleWidth, getEMA } = require("./common");
 let NSE_COOKIE_CACHE = { time: 0, cookie: "" };
+const { loadObj, dumpObj } = require("./logger");
 
 async function getNSECookie() {
+  let retry = 0;
   try {
     if (
       NSE_COOKIE_CACHE.cookie &&
@@ -15,8 +17,20 @@ async function getNSECookie() {
       //     " sec old",
       // );
       return NSE_COOKIE_CACHE.cookie;
+    } else {
+      try {
+        NSE_COOKIE_CACHE = loadObj();
+        if (
+          Math.floor(Date.now() / 1000) - NSE_COOKIE_CACHE.time < 3400 &&
+          false
+        ) {
+          console.log("LOGGED COOKIE USED");
+          return NSE_COOKIE_CACHE.cookie;
+        }
+      } catch (e) {
+        console.log("LOGGED COOKIE CACHE not found");
+      }
     }
-
     //[NSE-FETCH]
     let result = await axios.get(
       "https://www.nseindia.com/get-quotes/derivatives",
@@ -47,9 +61,15 @@ async function getNSECookie() {
       time: Math.floor(Date.now() / 1000),
       cookie: result?.headers?.["set-cookie"].join("; "),
     };
+    dumpObj(NSE_COOKIE_CACHE);
     console.warn("Fetched new NSE cookie at:", new Date().toLocaleString());
     return NSE_COOKIE_CACHE.cookie;
   } catch (error) {
+    if (retry < 3) {
+      retry++;
+      console.warn("Retrying to fetch NSE cookie, attempt:", retry);
+      return await getNSECookie();
+    }
     throw new Error("failed to fetch nse cookie");
   }
 }

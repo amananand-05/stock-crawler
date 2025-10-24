@@ -3,6 +3,7 @@ const { getLargeCaps } = require("./staticData");
 // Create HTTPS agent (disable cert check for dev)
 const agent = new https.Agent({
   rejectUnauthorized: false, // ⚠️ Only for development!
+  // keepAlive: false
 });
 function getEMA(priceCurr, EMALast, periods = undefined) {
   if (!periods || periods <= 0)

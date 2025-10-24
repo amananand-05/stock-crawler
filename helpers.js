@@ -10,6 +10,7 @@ const {
   getNSEStockTradeInfo,
 } = require("./nse");
 
+const pLimitDefault = 50;
 const { dumpObj, loadObj } = require("./logger");
 
 const { getLargeCaps } = require("./staticData");
@@ -93,7 +94,7 @@ function generateCombos() {
 // Main function: fetch and persist symbols
 async function accAndPersistSymbols() {
   const combos = generateCombos();
-  const limit = pLimit(1000); // concurrency limit
+  const limit = pLimit(pLimitDefault); // concurrency limit
 
   console.log(`🚀 Starting fetch for ${combos.length} combinations...`);
 
@@ -152,7 +153,7 @@ async function loadSymbols() {
 async function getSymbolMetadata(symbols) {
   const metadata = [];
   let count = 0;
-  const limit = pLimit(1000); // Limit concurrency to 20 (you can adjust this number)
+  const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
 
   // Create tasks for each symbol and pass them to p-limit
   const tasks = Object.entries(symbols).map(([index, symbol]) =>
@@ -378,7 +379,7 @@ function getUnderEMA(
     );
   return getLargeCaps(cap).then((largeCaps) => {
     console.log(`Checking ${largeCaps.length} large cap stocks...`);
-    const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+    const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
     const tasks = largeCaps.map((stock) =>
       limit(async () => {
         try {
@@ -450,7 +451,7 @@ async function getAllFutureCompareToCurrent(cap, comparator = "less") {
   let stocksByCap = await getLargeCaps(cap);
 
   console.log(`Checking ${stocksByCap.length} large cap stocks for futures...`);
-  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+  const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
@@ -522,7 +523,7 @@ async function getEma20_50_100_under_200(
   console.log(
     `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
   );
-  const limit = pLimit(20); // Limit concurrency to 20 (you can adjust this number)
+  const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
@@ -598,7 +599,7 @@ async function rsiCompTo(
   console.log(
     `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
   );
-  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+  const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
@@ -657,7 +658,7 @@ async function getGapUpAndGapDown(cap, threshold_percent = 3) {
   console.log(
     `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
   );
-  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+  const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
@@ -706,7 +707,7 @@ async function backTrack(cap = 300000, investmentPerTransaction = 100000) {
   console.log(
     `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
   );
-  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+  const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
   const tasks = stocksByCap.map((stock) =>
     limit(async () => {
       try {
