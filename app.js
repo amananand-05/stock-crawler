@@ -12,6 +12,7 @@ const {
   getEma20_50_100_under_200,
   rsiCompTo,
   getGapUpAndGapDown,
+  backTrack,
 } = require("./helpers");
 
 const {
@@ -99,6 +100,7 @@ app.get("/", (req, res) => {
             <option value="/api/rsi-less-than">5. RSI Less Than</option>
             <option value="/api/gap-up-gap-down">6. Gap-Up Gap-Down</option>
             <!-- Uncomment others as needed
+            <option value="/api/bt">x. Back Track</option>
             <option value="/api/stock">/api/stock</option>
             <option value="/api/large-caps">/api/large-caps</option>
             <option value="/api/get-stock-history">/api/get-stock-history</option>
@@ -143,6 +145,7 @@ app.get("/", (req, res) => {
               { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" },
               { label: "(Optional) Threshold %", name: "threshold_percent", placeholder: "default value 3" },
             ],
+            "/api/bt" : [],
             "/api/stock": [
               { label: "Stock Symbol", name: "symbol", placeholder: "e.g. INFY" }
             ],
@@ -340,6 +343,16 @@ app.get("/api/rsi-more-than", async (req, res, next) => {
       parseInt(req?.query?.compare_value ?? 70),
       "above",
     );
+    addSerial(result);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/bt", async (req, res, next) => {
+  try {
+    const result = await backTrack();
     addSerial(result);
     res.status(200).json(result);
   } catch (error) {

@@ -1,5 +1,5 @@
 const { addEmaToHistory } = require("./common");
-const { format } = require("date-fns");
+const { format, getMonth } = require("date-fns");
 
 const fs = require("fs/promises");
 const path = require("path");
@@ -10,6 +10,8 @@ const {
   getNSEStockInfo,
   getNSEStockTradeInfo,
 } = require("./nse");
+
+const { dumpObj, loadObj } = require("./logger");
 
 const { getLargeCaps } = require("./staticData");
 const {
@@ -696,6 +698,95 @@ async function getGapUpAndGapDown(cap, threshold_percent = 3) {
   return results.filter((result) => result !== null);
 }
 
+async function backTrack(cap = 300000, investmentPerTransaction = 100000) {
+  let stocksByCap = await getLargeCaps(cap);
+  // let ema20_50_100_under_200 = [];
+  console.log(
+    `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
+  );
+  const limit = pLimit(50); // Limit concurrency to 20 (you can adjust this number)
+  const tasks = stocksByCap.map((stock) =>
+    limit(async () => {
+      try {
+        let history = await getNSEStockHistory(
+          stock.NSEID || stock.BSEID,
+          "EQ",
+        );
+        return {
+          name: stock.Name,
+          history,
+        };
+      } catch (error) {
+        console.error(
+          `Error fetching history for ${stock.Name} (${
+            stock.NSEID || stock.BSEID
+          }):`,
+          error.message,
+        );
+      }
+      return null;
+    }),
+  );
+
+  // let results = await Promise.all(tasks);
+  // dumpObj(results, "backtrack_stocks_history")
+  let results = loadObj("backtrack_stocks_history");
+  let sliceValue = 6000;
+  results.forEach((x) => {
+    delete x.history.s;
+    Object.keys(x.history).forEach((key) => {
+      x.history[key] = x.history[key].slice(-1 * sliceValue); // last 250 days
+    });
+    x.history.t = x.history.t.map((x) =>
+      format(new Date(x * 1000), "dd-MMM-yyyy"),
+    );
+  });
+  results = results.filter((result) => result.history.t.length === sliceValue);
+  const monthStarts = [];
+  const monthEnds = [];
+  for (let i = 1; i < results[0].history.t.length; i++) {
+    const month = getMonth(new Date(results[0].history.t[i]));
+    const prev_date_month = getMonth(new Date(results[0].history.t[i - 1]));
+    if (month !== prev_date_month) {
+      if (monthStarts.length > 0) monthEnds.push(i - 1);
+      monthStarts.push(i);
+    }
+  }
+  let net_inv = 0;
+  let net_profit = 0;
+  results.forEach((stock) => {
+    // i will buy is profit is on closeing price of monthStarts[i], if there is profit in open and close price by 1 %
+    // and if i bought, i will sell on monthEnds[i]
+
+    for (let i = 0; i < monthStarts.length - 1; i++) {
+      const buy_price = stock.history.c[monthStarts[i] + 1];
+      const sell_price = stock.history.c[monthEnds[i]];
+      if (
+        (stock.history.c[monthStarts[i]] - stock.history.o[monthStarts[i]]) *
+          (100 / stock.history.o[monthStarts[i]]) >=
+          1 &&
+        (stock.history.c[monthStarts[i + 1]] -
+          stock.history.o[monthStarts[i + 1]]) *
+          (100 / stock.history.o[monthStarts[i + 1]]) >=
+          1
+      ) {
+        // if 2 consecutive day +1 percent change
+        // I will buy
+        const qty = Math.floor(investmentPerTransaction / buy_price);
+        net_inv += qty * buy_price;
+        net_profit += qty * (sell_price - buy_price);
+      }
+    }
+  });
+  return [
+    {
+      net_profit,
+      net_inv,
+      ["profit%"]: ((net_profit * 100) / net_inv).toFixed(2),
+    },
+  ];
+}
+
 module.exports = {
   loadModules,
   getSymbolCurrInfo,
@@ -708,4 +799,5 @@ module.exports = {
   getEma20_50_100_under_200,
   rsiCompTo,
   getGapUpAndGapDown,
+  backTrack,
 };
