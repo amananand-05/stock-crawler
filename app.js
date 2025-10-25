@@ -132,7 +132,10 @@ app.get("/", (req, res) => {
 
       </head>
       <body>
-        <h1>📊 Sumit's Stock Scanner.</h1>
+        <marquee behavior="scroll" direction="right" scrollamount="30">
+          <h1>📊 Sumit's Stock Scanner.</h1>
+        </marquee>
+
 
         <form id="apiForm">
           <label for="endpoint">Select Endpoint</label>
