@@ -132,8 +132,8 @@ app.get("/", (req, res) => {
 
       </head>
       <body>
-        <marquee behavior="scroll" direction="right" scrollamount="30">
-          <h1>📊 Sumit's Stock Scanner.</h1>
+        <marquee behavior="scroll" direction="right" scrollamount="20">
+          <h1>📊 SUMIT'S STOCK SCANNER</h1>
         </marquee>
 
 
