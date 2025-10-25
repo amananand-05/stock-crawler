@@ -44,24 +44,45 @@ app.get("/", (req, res) => {
           body {
             font-family: Arial, sans-serif;
             padding: 20px;
-            background: #f7f9fc;
+            background: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text */
           }
-          h1 { color: #2b6cb0; }
+        
+          h1 { 
+            color: #63b3ed; /* Lighter blue for contrast */
+          }
+        
           form {
             margin-bottom: 20px;
             padding: 20px;
-            background: white;
+            background: #1e1e1e; /* Slightly lighter than body for contrast */
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
           }
-          label { display: block; margin-top: 10px; font-weight: bold; }
+        
+          label { 
+            display: block; 
+            margin-top: 10px; 
+            font-weight: bold; 
+            color: #cbd5e0; /* Muted light gray */
+          }
+        
           input, select {
             width: 100%;
             padding: 8px;
             margin-top: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid #333;
             border-radius: 6px;
+            background: #2a2a2a;
+            color: #f0f0f0;
           }
+        
+          input:focus, select:focus {
+            border-color: #63b3ed;
+            outline: none;
+            background: #333;
+          }
+        
           button {
             margin-top: 15px;
             background: #2b6cb0;
@@ -70,22 +91,45 @@ app.get("/", (req, res) => {
             padding: 10px 15px;
             border-radius: 6px;
             cursor: pointer;
+            transition: background 0.2s ease;
           }
-          button:hover { background: #2c5282; }
+        
+          button:hover { 
+            background: #2c5282; 
+          }
+        
           table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 30px;
-            background: white;
+            background: #1e1e1e;
+            color: #e0e0e0;
           }
+        
           th, td {
-            border: 1px solid #ddd;
+            border: 1px solid #333;
             padding: 8px;
             text-align: left;
           }
-          th { background: #f0f0f0; }
-          pre { background: #f9f9f9; padding: 10px; border-radius: 6px; }
+        
+          th { 
+            background: #2a2a2a; 
+            color: #90cdf4; 
+          }
+        
+          tr:nth-child(even) {
+            background: #242424;
+          }
+        
+          pre { 
+            background: #1e1e1e; 
+            padding: 10px; 
+            border-radius: 6px; 
+            color: #f0f0f0;
+            border: 1px solid #333;
+          }
         </style>
+
       </head>
       <body>
         <h1>📊 Sumit's Stock Scanner.</h1>
