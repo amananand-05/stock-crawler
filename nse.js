@@ -106,7 +106,11 @@ async function getNSEDerivatives(symbol) {
 /*
 get nse history for the symbol, and type
  */
-async function getNSEStockHistory(symbol = undefined, type = "EQ") {
+async function getNSEStockHistory(
+  symbol = undefined,
+  type = "EQ",
+  fromDate = 0,
+) {
   try {
     console.log(
       "Fetching NSE Stock History for symbol:",
@@ -122,7 +126,7 @@ async function getNSEStockHistory(symbol = undefined, type = "EQ") {
     const tradingSymbol = `${symbol}-${type}`;
 
     // Time range (e.g., from 0 to now in seconds)
-    const fromDate = 0;
+    // fromDate = 0;
     const toDate = Math.floor(Date.now() / 1000); // current timestamp in seconds
 
     // Request payload

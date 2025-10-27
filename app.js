@@ -13,6 +13,7 @@ const {
   rsiCompTo,
   getGapUpAndGapDown,
   backTrack,
+  findDoji,
 } = require("./helpers");
 const { printBigText } = require("./bigName");
 
@@ -147,6 +148,7 @@ app.get("/", (req, res) => {
             <option value="/api/rsi-more-than">4. RSI More Than</option>
             <option value="/api/rsi-less-than">5. RSI Less Than</option>
             <option value="/api/gap-up-gap-down">6. Gap-Up Gap-Down</option>
+            <option value="/api/find-doji">7. Find Doji</option>
             <option value="/api/bt">x. Back Track</option>
             <!-- Uncomment others as needed
             <option value="/api/bt">x. Back Track</option>
@@ -194,6 +196,13 @@ app.get("/", (req, res) => {
               { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" },
               { label: "(Optional) Threshold %", name: "threshold_percent", placeholder: "default value 3" },
             ],
+            "/api/find-doji": [
+              { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" },
+              { label: "(Optional) Candle Width in Days", name: "candle_width_in_days", placeholder: "default value 1" },
+              { label: "(Optional) x % of the total candle", name: "doji_length_percentage", placeholder: "default value of x is 10" },
+            ],
+            
+            
             "/api/bt" : [],
             "/api/stock": [
               { label: "Stock Symbol", name: "symbol", placeholder: "e.g. INFY" }
@@ -410,6 +419,24 @@ app.get("/api/rsi-more-than", async (req, res, next) => {
 app.get("/api/bt", async (req, res, next) => {
   try {
     const result = await backTrack();
+    addSerial(result);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/find-doji", async (req, res, next) => {
+  try {
+    let result = await findDoji(
+      parseInt(req?.query?.cap),
+      parseInt(req?.query?.candle_width_in_days ?? 1),
+      parseInt(req?.query?.doji_length_percentage ?? 10),
+      "below",
+    );
+    result = result.sort(
+      (a, b) => a["Doji % above base"] - b["Doji % above base"],
+    );
     addSerial(result);
     res.status(200).json(result);
   } catch (error) {

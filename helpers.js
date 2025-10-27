@@ -650,6 +650,112 @@ async function rsiCompTo(
   return results.filter((result) => result !== null);
 }
 
+async function findDoji(
+  cap,
+  candle_width_in_days = 1,
+  doji_length_percentage = undefined,
+) {
+  if (!candle_width_in_days || typeof candle_width_in_days !== "number")
+    throw new Error("Candle Width in Days, should be a number");
+  if (
+    (!doji_length_percentage && doji_length_percentage !== 0) ||
+    typeof doji_length_percentage !== "number"
+  )
+    throw new Error(
+      "Doji Length Percentage should be a number, like: 10 or 20 etc",
+    );
+  let stocksByCap = await getLargeCaps(cap);
+  // let ema20_50_100_under_200 = [];
+  console.log(
+    `Checking ${stocksByCap.length} large cap stocks for EMA conditions...`,
+  );
+  const limit = pLimit(pLimitDefault); // Limit concurrency to 20 (you can adjust this number)
+  const tasks = stocksByCap.map((stock) =>
+    limit(async () => {
+      try {
+        let history = await getNSEStockHistory(
+          stock.NSEID || stock.BSEID,
+          "EQ",
+          Math.floor(Date.now() / 1000) - 24 * 3600 * 10, // in past 10 days
+        );
+        // [pretty time]
+        // history.t = history.t.map(x=>
+        //   format(new Date(x * 1000), "dd-MMM-yyyy")
+        // );
+        history = normalizeCandleWidth(history, candle_width_in_days);
+        const historyDataLength = history.t.length;
+        const lastCandleVirtualLength =
+          history.h[historyDataLength - 1] - history.l[historyDataLength - 1];
+        const lastCandleSolidLength = Math.abs(
+          history.o[historyDataLength - 1] - history.c[historyDataLength - 1],
+        );
+        if (
+          (lastCandleSolidLength * 100) / lastCandleVirtualLength <=
+          doji_length_percentage
+        ) {
+          return {
+            Time: format(
+              new Date(history.t[historyDataLength - 1] * 1000),
+              "dd-MMM-yyyy",
+            ),
+            Name: stock["Full Name"],
+            "Doji Length %": (
+              (lastCandleSolidLength * 100) /
+              lastCandleVirtualLength
+            ).toFixed(2),
+            "Doji % above base": (
+              (Math.abs(
+                Math.min(
+                  history.c[historyDataLength - 1],
+                  history.o[historyDataLength - 1],
+                ) - history.l[historyDataLength - 1],
+              ) *
+                100) /
+              lastCandleVirtualLength
+            ).toFixed(2),
+            "Market Capital": stock["Market Capital"],
+            NSEID: stock.NSEID,
+          };
+        }
+
+        // history[`rsi${rsi}`] = calculateRSI(history.c, rsi);
+        // // history[`wma21` ] = calculateWMA(history.c, 21); // calculateWMA is wrong implementation
+        // if (!history[`rsi${rsi}`])
+        //   throw new Error(`no rsi${rsi} for ` + stock.NSEID);
+        // // if (!history[`wma21`]) throw new Error(`no wma21 for ` + stock.NSEID);
+        // const n = history.c.length - 1; // last
+        // if (operator === "above" && history[`rsi${rsi}`][n] >= compare_value)
+        //   return {
+        //     time: format(new Date(history.t[n] * 1000), "dd-MMM-yyyy"),
+        //     [`rsi${rsi}`]: history[`rsi${rsi}`][n],
+        //     compare_value: compare_value,
+        //     ...stock,
+        //   };
+        // else if (
+        //   operator === "below" &&
+        //   history[`rsi${rsi}`][n] <= compare_value
+        // )
+        //   return {
+        //     time: format(new Date(history.t[n] * 1000), "dd-MMM-yyyy"),
+        //     [`rsi${rsi}`]: history[`rsi${rsi}`][n],
+        //     ...stock,
+        //   };
+      } catch (error) {
+        console.error(
+          `Error fetching history for ${stock.Name} (${
+            stock.NSEID || stock.BSEID
+          }):`,
+          error.message,
+        );
+      }
+      return null;
+    }),
+  );
+
+  const results = await Promise.all(tasks);
+  return results.filter((result) => result !== null);
+}
+
 async function getGapUpAndGapDown(cap, threshold_percent = 3) {
   if (!threshold_percent || typeof threshold_percent !== "number")
     throw new Error("Threshold %, should be a number");
@@ -802,5 +908,6 @@ module.exports = {
   getEma20_50_100_under_200,
   rsiCompTo,
   getGapUpAndGapDown,
+  findDoji,
   backTrack,
 };
