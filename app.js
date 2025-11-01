@@ -141,7 +141,6 @@ app.get("/", (req, res) => {
         <form id="apiForm">
           <label for="endpoint">Select Endpoint</label>
           <select id="endpoint" name="endpoint">
-           
             <option value="/api/future-more-than-current">1. Future More Than Current</option>
             <option value="/api/future-less-than-current">2. Future Less Than Current</option>
             <option value="/api/get-ema-20-50-100-under-200">3. EMA (20 50 100) under 200</option>
@@ -198,11 +197,19 @@ app.get("/", (req, res) => {
             ],
             "/api/find-doji": [
               { label: "Market Cap (in Crs)", name: "cap", placeholder: "number in Crs, like: 100000" },
-              { label: "(Optional) Candle Width in Days", name: "candle_width_in_days", placeholder: "default value 1" },
-              { label: "(Optional) x % of the total candle", name: "doji_length_percentage", placeholder: "default value of x is 10" },
+              { 
+                label: "Candle Unit", 
+                name: "candle_unit", 
+                type: "select", 
+                options: [
+                  { label: "Day", value: "D" },
+                  { label: "Hour", value: "H" },
+                  { label: "Week", value: "W" },
+                ]
+              },
+              { label: "(Optional) Candle Width in Numbers", name: "candle_width_in_days", placeholder: "default value 1" },
+              { label: "(Optional) x % of the total candle", name: "doji_length_percentage", placeholder: "default value of x is 10" }
             ],
-            
-            
             "/api/bt" : [],
             "/api/stock": [
               { label: "Stock Symbol", name: "symbol", placeholder: "e.g. INFY" }
@@ -242,16 +249,28 @@ app.get("/", (req, res) => {
               paramsContainer.innerHTML = "<p>No parameters needed.</p>";
               return;
             }
+          
             params.forEach(param => {
               const label = document.createElement("label");
               label.textContent = param.label;
-
-              const input = document.createElement("input");
-              input.name = param.name;
-              input.placeholder = param.placeholder || param.label;
-
               paramsContainer.appendChild(label);
-              paramsContainer.appendChild(input);
+          
+              if (param.type === "select") {
+                const select = document.createElement("select");
+                select.name = param.name;
+                (param.options || []).forEach(opt => {
+                  const option = document.createElement("option");
+                  option.value = opt.value;
+                  option.textContent = opt.label;
+                  select.appendChild(option);
+                });
+                paramsContainer.appendChild(select);
+              } else {
+                const input = document.createElement("input");
+                input.name = param.name;
+                input.placeholder = param.placeholder || param.label;
+                paramsContainer.appendChild(input);
+              }
             });
           }
 
